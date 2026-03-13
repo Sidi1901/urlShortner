@@ -16,6 +16,8 @@ func main(){
 	
 	cfg := Config{}
 
+	fmt.Println("Loading config from environment variables...")
+
 	if err := env.Parse(); err != nil {
 		log.Fatalf("Unable to load config: %v", err)
 	}

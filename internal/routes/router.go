@@ -6,7 +6,7 @@ import (
 	
 )
 
-func setupRoutes(app *fiber.App) *gin.Engine{
+func setupRoutes(app *gin.Context) *gin.Engine{
 
 	r := gin.Default()
 
