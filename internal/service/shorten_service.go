@@ -1,4 +1,4 @@
-package handler
+package service
 
 import(
    "time"
@@ -6,22 +6,27 @@ import(
    "os"
    "fmt"
    "github.com/Sidi1901/urlShortner/internal/repository"
-   repo "github.com/Sidi1901/urlShortner/pkg/utils/utilities"
+   repo "github.com/Sidi1901/urlShortner/pkg/utils"
    "github.com/asaskevich/govalidator"
    "github.com/google/uuid"
    "github.com/gin-gonic/gin"
 )
 
 
+resp := response{
+	
+}
 
-func CreateShortURL(url string, ip string, expiry time.Duration, CustomShortCode string) (string,error) {
+
+
+func CreateShortURL(url string, ip string, expiry time.Duration, CustomShortCode string) (resp,error) {
 	
 
 	// 1. Implement rate limiting
 
 	// Try to get the value of the IP address from the database. If the value does not exist, it means that it's the first time the IP address is making a request, so we set the rate limit for that IP address. If the value exists, we check if it's less than or equal to 0, which means that the rate limit has been exceeded. If the rate limit is exceeded, we return a 503 Service Unavailable status with a message indicating that the rate limit has been exceeded and when it will reset.
 
-	val, err := repo.GetRemainingQuota(c.IP())
+	quota, err := repo.GetRemainingQuota(c.IP())
 
 	if err == nil{
 		// Rate limit exists for the IP address. Check if it's exceeding the quota. 
@@ -43,7 +48,6 @@ func CreateShortURL(url string, ip string, expiry time.Duration, CustomShortCode
 	}
 
 	// 3. Check for domain error
-
 	if !helpers.IsValidDomain(body.URL) {
 		return "", fmt.Errorf()
 	}
@@ -67,7 +71,7 @@ func CreateShortURL(url string, ip string, expiry time.Duration, CustomShortCode
 		customShortCode = uuid.New().String()[:6]
 	}
 
-	val, err := repo.GetURL(customShortCode)
+	_, err := repo.GetURL(customShortCode)
 
 	if err == nil {
 		return "", fmt.Errorf("Custom short url is already in use")
@@ -77,20 +81,25 @@ func CreateShortURL(url string, ip string, expiry time.Duration, CustomShortCode
 
 	id := uuid.New().String()[:6]
 	
-
+	// Save data in table ShortURL
 	_ = repo.SaveURL(id, body.URL, customShortCode, expiry, c.IP())
-	_, err = repo.SetRateLimit(c.IP(), val-1, time.Now().Add(30*time.Minute), time.Now())
+
+	// Save data in table RateLimit 1) 
+
+	err = repo.SetRateLimit(c.IP(), quota-1, time.Now().Add(30*time.Minute), time.Now())
 
 	if err != nil {
 		return "", fmt.Errorf("Unable to connect to the database")
 	}
 
-	val, err2 := repo.GetResetTime(c.IP())
+	// Get reset time for sending in response
+
+	nextResetTime, err2 := repo.GetResetTime(c.IP())
 
 	if err2 != nil {
 		return "", fmt.Errorf("Unable to connect to the database")
 	}
 	
-	return [customShortCode, val-1, val], nil
+	return [customShortCode, quota-1, nextResetTime], nil
 
 }

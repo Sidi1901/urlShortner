@@ -1,5 +1,3 @@
-FROM redis:latest
+FROM postgres:18
 
-EXPOSE 6379
-
-ENTRYPOINT ["redis-server"]
+EXPOSE 5432

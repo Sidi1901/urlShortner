@@ -1,6 +1,8 @@
-package handler
+package service
 
 import(
+	"database/sql"
+	"errors"
 	"fmt"
 	repo "github.com/Sidi1901/urlShortner/internal/repository"
 )

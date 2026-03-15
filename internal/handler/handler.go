@@ -2,10 +2,11 @@ package handler
 
 import(
 	"fmt"
+	"net/http"
 	"time"
-	"github.com/Sidi1901/urlShortner/database"
-	"github.com/Sidi1901/urlShortner/internal/service/shorten_service"
-	"github.com/Sidi1901/urlShortner/internal/service/resolve_service"
+	"github.com/gofiber/fiber/v2"
+	"github.com/Sidi1901/urlShortner/internal/database"
+	"github.com/Sidi1901/urlShortner/internal/service"
 )
 
 

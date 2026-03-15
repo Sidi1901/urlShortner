@@ -2,6 +2,8 @@ package repository
 
 import(
 	"time"
+	"database/sql"
+	"errors"
 	"github.com/Sidi1901/urlShortner/internal/database"
 )
 
@@ -9,7 +11,7 @@ import(
 func SaveURL(id string, originalURL string, shortCode string, expiry time.Duration, ipAddress string) error {
 	query := `INSERT INTO ShortURL (id, short_code, original_url, created_at, expires_at, created_by) VALUES ($1, $2, $3, $4, $5, $6)`
 
-	_, err := database.DB.exec(query, id, shortCode, originalURL, time.Now(), time.Now().Add(expiry), "system")
+	_, err := database.DB.Exec(query, id, shortCode, originalURL, time.Now(), time.Now().Add(expiry), "system")
 	
 	return err
 }
@@ -21,12 +23,12 @@ func GetURL(shortCode string) (string, error) {
 
 	var original_url string
 
-	err := databse.DB.QueryRow(query, shortCode).Scan(&original_url)
+	err := database.DB.QueryRow(query, shortCode).Scan(&original_url)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) [
+		if errors.Is(err, sql.ErrNoRows) {
 			return "", sql.ErrNoRows
-		]
+		}
 
 		return "", err
 	}
