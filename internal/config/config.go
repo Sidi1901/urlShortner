@@ -1,10 +1,13 @@
 package config
 
 type Config struct {
-	Host     string  `env:"HOST" envDefault:"localhost"`
-	Port     string  `env:"PORT" envDefault:"3000"`
-	Username string  `env:"USERNAME" `
-	Password string  `env:"PASSWORD"`
+	DBHost     string  `env:"DBHOST" envDefault:"localhost"`
+	DBPort     string  `env:"DBPORT" envDefault:"5432"`
+	Username string  `env:"DBUSER" `
+	Password string  `env:"DBPASSWORD"`
 	DBName   string  `env:"DBNAME"`
-	SSLMode  string  `env:"SSLMODE" envDefault:"false"`
+	SSLMode  string  `env:"SSLMODE" envDefault:"disable"`
+	DOMAIN   string  `env:"DOMAIN"`
+	APPPORT string  `env:"APPPORT" envDefault:"3000"`
+	APIQUOTA int     `env:"APIQUOTA" envDefault:"10"`
 }

@@ -14,7 +14,10 @@ var DB *sql.DB
 
 func ConnectDB(cfg *config.Config) {
 
-	connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s", cfg.Host, cfg.Port, cfg.Username, cfg.Password, cfg.DBName, cfg.SSLMode)
+	fmt.Println("Connecting to PostgreSQL database...")
+	fmt.Printf("DB Config: Host=%s Port=%s User=%s DBName=%s SSLMode=%s\n", cfg.DBHost, cfg.DBPort, cfg.Username, cfg.DBName, cfg.SSLMode)
+
+	connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s", cfg.DBHost, cfg.DBPort, cfg.Username, cfg.Password, cfg.DBName, cfg.SSLMode)
 
 	db, err := sql.Open("postgres", connStr)
 

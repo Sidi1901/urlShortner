@@ -40,9 +40,9 @@ func IsValidDomain(url string) bool {
 	var newURL string;
 
 	newURL = strings.Replace(url, "http://","",1) //"http://example.com/page/login" -> "example.com/page/login"
-	newURL = strings.Replace(url, "https://","",1) // "https://example.com/page/login" -> "example.com/page/login"
-	newURL = strings.Replace(url, "www.","",1) //"www.example.com/page/login" -> "example.com/page/login"
-	newURL = strings.Split(url, "/")[0] // "example.com/page/login" -> example.com
+	newURL = strings.Replace(newURL, "https://","",1) // "https://example.com/page/login" -> "example.com/page/login"
+	newURL = strings.Replace(newURL, "www.","",1) //"www.example.com/page/login" -> "example.com/page/login"
+	newURL = strings.Split(newURL, "/")[0] // "example.com/page/login" -> example.com
 
 
 	// Secondly, check if the given URL is the same as the domain configured in the environment variable, stop processing and return false.

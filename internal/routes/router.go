@@ -6,12 +6,8 @@ import (
 	
 )
 
-func setupRoutes(app *gin.Context) *gin.Engine{
+func SetupRoutes(r *gin.Engine){
 
-	r := gin.Default()
-
-	app.Get("/:url",handler.ResolveURL)
-	app.Post("/api/v1",handler.ShortenURL)
-
-	return r;
+	r.GET("/:url", handler.ResolveURL)
+	r.POST("/api/v1",handler.ShortenURL)
 }

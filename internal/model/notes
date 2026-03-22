@@ -1,0 +1,8 @@
+🔥 Rule of thumb (memorize this)
+
+👉 Ask yourself:
+
+“Can this field logically be missing?”
+
+❌ No → use time.Time
+✅ Yes → use *time.Time
