@@ -2,94 +2,119 @@ package repository
 
 import(
 	"time"
-	"database/sql"
 	"errors"
+	"context"
 	"github.com/Sidi1901/urlShortner/internal/database"
+	"github.com/jmoiron/sqlx"
 )
 
-// Set into ShortURL
-func SaveURL(id string, originalURL string, shortCode string, expiry time.Duration, ipAddress string) error {
-	query := `INSERT INTO ShortURL (id, short_code, original_url, created_at, expires_at, created_by) VALUES ($1, $2, $3, $4, $5, $6)`
+type ShortCodeRepository interface {
+	// Save Short code for an original URL
+	SaveShortCode(ctx context.Context, shortcode *model.ShortCodes) error
 
-	_, err := database.DB.Exec(query, id, shortCode, originalURL, time.Now(), time.Now().Add(expiry), "system")
-	
+	// Get data for example ShortCode by Original URL
+	FindByOriginalURl(ctx context.Context, url model.ShortCodes)
+
+	// Update Short code for an origial URL
+	UpdateShortCode()
+
+	// Delete Short code foran original URL
+	DeleteShortCode()
+}
+
+type shortCodeRepository struct {
+	db *sqlx.DB
+}
+
+func NewURLRepository(db *sql.db) ShortCodeRepository{
+	return &shortCodeRepository{db:db}
+}
+
+// Getters and setters for ShortCodeRepository
+
+func (r *shortCodeRepository) SaveShortCode (ctx context.Context, shortcodes *model.ShortCodes) error{
+	query := `INSERT into short_codes(id, short_code, original_url, created_at, expires_at, ip_address) VALUES($1,$2,$3,$4,$5,$6)`
+
+	_,err := r.db.ExecContext(
+		ctx,
+		query,
+		shortcodes.ID,
+		shortcodes.ShortCode,
+		shortcodes.CreatedAt,
+		shortcodes.ExpiresAt,
+		shortcodes.IPAddress,
+		
+	)
+
 	return err
 }
 
-// Get from ShortURL
-func GetURL(shortCode string) (string, error) {
 
-	query := `SELECT original_url FROM ShortURL WHERE short_code=$1`
 
-	var original_url string
 
-	err := database.DB.QueryRow(query, shortCode).Scan(&original_url)
 
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return "", sql.ErrNoRows
-		}
 
-		return "", err
-	}
 
-	return original_url, nil
+type RatelimitRepository interface {
+	CreateQuota()
+	GetQuota()
+	UpdateQuota()	
 }
 
 
-// Set into RateLimit
-func SetRateLimit(IPAddress string, remainingQuota int, resetAt time.Time) error {
-
-	query := `INSERT INTO RateLimit (ip_address, remaining_quota, reset_at, updated_at) VALUES ($1, $2, $3, $4) ON CONFLICT (ip_address) DO UPDATE SET remaining_quota=$2, reset_at=$3, updated_at=$4`	
-
-	updatedAt := time.Now()
-	_, err := database.DB.Exec(query, IPAddress, remainingQuota, resetAt, updatedAt)
-
-	return err
-}
 
 
-// Get from RateLimit
-func GetRemainingQuota(IPAddress string) (int, error) {
-
-	query := `SELECT remaining_quota FROM RateLimit WHERE ip_address=$1`
-
-	var remainingQuota int
-
-	err := database.DB.QueryRow(query, IPAddress).Scan(&remainingQuota)
-
-	if err != nil {
-
-		if errors.Is(err, sql.ErrNoRows) {
-			return 0, sql.ErrNoRows
-		}
-
-		return 0, err
-	}
-
-	return remainingQuota, nil
-}
 
 
-//Get from RateLimit
-func GetResetTime(IPAddress string) (time.Time, error) {
 
-	query := `SELECT reset_at FROM RateLimit WHERE ip_address=$1`
 
-	var resetAt time.Time
 
-	err := database.DB.QueryRow(query, IPAddress).Scan(&resetAt)
 
-	if err != nil {
 
-		if errors.Is(err, sql.ErrNoRows) {
-			return time.Time{}, sql.ErrNoRows
-		}
 
-		return time.Time{}, err
-	}
 
-	return resetAt, nil
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

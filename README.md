@@ -7,6 +7,7 @@ A scalable URL shortening service built with Go, Redis, and PostgreSQL supportin
 ## Features
 
 - Create short URLs
+    - User can create Short URL. 1:1 i.e One Short URL per ORiginal URL
 - Custom aliases
 - Expiry support
 - Click tracking & analytics
@@ -22,6 +23,9 @@ A scalable URL shortening service built with Go, Redis, and PostgreSQL supportin
 - Messaging (optional): Kafka
 - Containerization: Docker
 
+## Libraries
+
+
 ## Project Structure
 
 .
@@ -31,7 +35,8 @@ A scalable URL shortening service built with Go, Redis, and PostgreSQL supportin
 │   ├── handlers/   # HTTP handlers
 │   ├── services/   # Business logic
 │   ├── repository/ # DB layer
-│   └── models/
+│   └── models/     # Storage layer
+|   |__DTO/         # API contract layer
 ├── pkg/            # Reusable utilities
 ├── Dockerfile
 └── README.md
@@ -90,4 +95,16 @@ GET /analytics/{shortCode}
 ## Contributing
 
 Pull requests are welcome.
+
+
+## Next step
+
+- Use gorm
+- redis based rate limiting
+- User data save - dashboard
+- Authentication/ Athorisation (observability for admins)
+- Allow user to create many short URLs per Original URL
+
+pay?
+Increase quota
 
