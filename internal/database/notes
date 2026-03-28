@@ -1,0 +1,11 @@
+Download redis,postgres and pgadmin images
+
+
+create network pg-network 
+
+docker run --name postgres --network pg-network -e POSTGRES_USER=sidi -e POSTGRES_PASSWORD=123 -e POSTGRES_DB=mydb -p 5432:5432 -d postgres
+
+docker run --name pgadmin --network pg-network -e PGADMIN_DEFAULT_EMAIL=siddhiece@gmail.com -e PGADMIN_DEFAULT_PASSWORD=123 -p 5050:80 -d dpage/pgadmin
+
+redis stack command check in website of redis 
+https://redis.io/docs/latest/operate/oss_and_stack/install/archive/install-stack/docker/
