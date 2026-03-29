@@ -1,10 +1,16 @@
 package config
 
 type Config struct {
-	host     string  `env:"HOST" envDefault:"localhost"`
-	port     string  `env:"PORT" envDefault:"3000"`
-	username string  `env:"USERNAME" `
-	password string  `env:"PASSWORD"`
-	dbname   string  `env:"DBNAME"`
-	sslmode  string  `env:"SSLMODE" envDefault:"false"`
+	DBHost        string     `env:"DBHOST" envDefault:"localhost"`
+	DBPort        string     `env:"DBPORT" envDefault:"5432"`
+	Username      string     `env:"DBUSER" `
+	Password      string     `env:"DBPASSWORD"`
+	DBName        string     `env:"DBNAME"`
+	SSLMode       string     `env:"SSLMODE" envDefault:"disable"`
+	Domain        string     `env:"DOMAIN"`
+	AppPort       string     `env:"APPPORT" envDefault:"3000"`
+	APIQuota      int        `env:"APIQUOTA" envDefault:"10"`
+	RedisDBNo     int        `env:"REDISDBNO"`
+	RedisPassword string     `env:"REDISPASSWORD"`
+	RedisAddr     string     `env:"REDISADDR" envDefault:"localhost:6379"`
 }

@@ -2,16 +2,17 @@ package routes
 
 import (
 	"github.com/Sidi1901/urlShortner/internal/handler"
+	"github.com/Sidi1901/urlShortner/internal/middleware"
+	"github.com/Sidi1901/urlShortner/internal/ratelimiter"
 	"github.com/gin-gonic/gin"
 	
 )
 
-func setupRoutes(app *gin.Context) *gin.Engine{
+func SetupRoutes(r *gin.Engine){
 
-	r := gin.Default()
+	r.GET("/:url", handler.ResolveURL)
 
-	app.Get("/:url",handler.ResolveURL)
-	app.Post("/api/v1",handler.ShortenURL)
-
-	return r;
+	api := r.Group("/api")
+	api.Use(middleware.RateLimit(limiter))
+	api.POST("/api/v1",handler.ShortenURL)
 }

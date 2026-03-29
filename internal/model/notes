@@ -1,0 +1,14 @@
+Separation of concerns
+ShortCodes → core business entity (URL mapping)
+RateLimits → infrastructure concern (throttling / quota)
+
+
+If URL is inactive for 7 days, remove it from db and give alert to user.
+
+On clicking the button, create short URL. System will check if a user email is coming from a form or not. If not, it's the IP based rate limiting.If yes, it's the user based rate limiting. IP willbe a non null valuebut user can be a null value.
+
+dual-key rate limiting strategy:
+
+Registered user → key = email
+Anonymous user → key = IP address
+
