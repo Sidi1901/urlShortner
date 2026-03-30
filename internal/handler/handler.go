@@ -6,80 +6,143 @@ import(
 	"time"
 	"github.com/Sidi1901/urlShortner/internal/service"
 	"github.com/Sidi1901/urlShortner/internal/config"
+	"github.com/Sidi1901/urlShortner/internal/dto"
 	"github.com/gin-gonic/gin"
 )
 
 var cfg *config.Config
 
-type request struct {
-	URL	          string             `json:"url"`
-	CustomShort   string             `json:"short"`
-	Expiry        string             `json:"expiry"`
-}
 
-type response struct {
-	URL                 string          `json:"url"`
-	CustomShortURL      string          `json:"shorturl"`
-	Expiry              string          `json:"expiry"`
-	XRateRemaining      int             `json:"rate_limit"`
-	XRateLimitReset     time.Duration   `json:"rate_limit_reset"`
-}
 
-func ShortenURL(c *gin.Context) {
-	req := request{}
+// GET /:shortcode
+func ResolveURL(c *gin.Context){
+	shortcode := c.Param("shortcode")
 
-	if err := c.BindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format"})
+	mappedURL, err := service.GetOriginalURL(shortcode)
+
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "URL no found"})
 		return
-	}
-
-
-	var expiry_time time.Duration
-
-	if req.Expiry != "" {
-		if _, err := time.ParseDuration(req.Expiry); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid expiry format"})
-			return
-		}
-
-		expiry_time, _ = time.ParseDuration(req.Expiry)
-
-	} else {
-		expiry_time = 24 * time.Hour
 	} 
 
-	serviceResponse, err := service.CreateShortURL(req.URL, c.ClientIP(), expiry_time, req.CustomShort)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not call short URL service"})
+	// 302
+	c.Redirect(http.StatusFound, mappedURL)
+}
+
+// POST /api/v1/urls
+func CreateShortURL(c *gin.Context) {
+	var request dto.CreateShortURLRequest
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
 
+	uRL := request.URL
+	ShortCode := request.ShortCode
+	ExpirySec := time.Duration(*request.ExpirySec) * time.Second
+	ip := c.ClientIP()
+	
 
-	shortURL := fmt.Sprintf("https://%s/%s",cfg.DOMAIN, serviceResponse.CustomShortCodeURL)
-
-	resp := response{
-		URL: req.URL,
-		CustomShortURL: shortURL,
-		Expiry: req.Expiry,
-		XRateRemaining: serviceResponse.Quota,
-		XRateLimitReset: serviceResponse.ResetTime,
-	}
-
-	c.JSON(http.StatusOK, resp)
-}
-
-
-func ResolveURL(c *gin.Context) {
-	code := c.Param("code")
-
-	url, err := service.GetOriginalURL(code)
+	shortURL, err := service.CreateShortURL(uRL, ip, ExpirySec, *ShortCode)
 
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error":"URL not found"})
-
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.Redirect(http.StatusMovedPermanently, url)
+	response := dto.CreateShortURLResponse{
+		URL: uRL,
+		ShortCode : shortCode,
+		ShortURL  : shortURL,
+		Expiry    : ExpirySec,
+		CreatedAt : time.Now(),
+		UpdatedAt : time.Now()
+	}
+
+	c.JSON(http.StatusCreated, response)
 }
+
+// GET /api/v1/urls/:shortCode
+func GetURLDetails(c *gin.Context){
+	shortcode := c.Param("shortcode")
+
+	shortURLData, err := service.GetURL(shortcode)
+
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+
+	response := dto.ShortURLDataResponse{
+		URL          : shortURLData.URL,
+		ShortCode    : shortCode,
+		ShortURL     : shortURLData.ShortURL,
+		Expiry       : shortURLData.Expiry,
+		CreatedAt    : shortURLData.CreatedAt,
+		LastUpdatedAt: shortURLData.LastUpdatedAt
+	}
+
+	c.JSON(http.StatusFound, response)
+}
+
+
+// PUT /api/v1/urls/:shortcode
+func UpdateURL(c *gin.Context){
+	var request dto.UpdateShortURLRequest
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error", err.Error()})
+	}
+
+	err := service.UpdateURL(request)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error", err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "updated successfully"})
+}
+
+// DELETE /api/v1/urls/:shortCode
+func DeleteURL(c *gin.Context) {
+	shortCode := c.Param("shortCode")
+
+	err := service.DeleteURL(shortCode)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "deleted successfully",
+	})
+}
+
+// GET /api/v1/urls/:shortcode/stats
+func GetStats(c *gin.Context){
+	// shortcode := c.Param("shortcode")
+
+	// response, err := service.GetStats(shortcode)
+
+	// if err!= nil{
+	// 	c.JSON(http.StatusNotFound, gin.H{"error":err.Error()})
+	// 	return
+	// }
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "stats endpoint",
+	})
+}
+
+// GET /health
+func HealthCheck(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "UP",
+		"message": "Service is healthy",
+	})
+}
+
+
 

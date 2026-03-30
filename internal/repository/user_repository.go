@@ -8,3 +8,11 @@ import (
 	"github.com/jmoiron/sqlx"
 
 )
+
+type UserRepository interface {
+	CreateUser()
+	GetUser()
+	UpdateUser()
+	DeleteUser()
+}
+

@@ -1,10 +1,10 @@
-package model
+// package model
 
-import(
-	"time"
-)
+// import(
+// 	"time"
+// )
 
-type UserShortCode struct {
-	Email      string   `db:"email"`
-	ShortCode  string   `db:"short_code"`
-}
+// type UserShortCode struct {
+// 	Email      string   `db:"email"`
+// 	ShortCode  string   `db:"short_code"`
+// }
