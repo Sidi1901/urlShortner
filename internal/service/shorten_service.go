@@ -41,7 +41,7 @@ func CreateShortURL(URL string, ip string, ExpirySec time.Duration, ShortCode st
 		return "", fmt.Errorf("Custom short url is already in use. Please submit request with different custom short code")
 	}
 
-	// Save data in table ShortURL
+	// Save data in table ShortURL.
 	var shortURL model.ShortURL
 	_ = repo.SaveShortCode(ctx, shortURL)
 
