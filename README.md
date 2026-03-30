@@ -4,15 +4,40 @@
 A scalable URL shortening service built with Go, Redis, and PostgreSQL supporting custom aliases and analytics.
 
 
-## Features
 
-- Create short URLs
-    - User can create Short URL. 1:1 i.e One Short URL per ORiginal URL
-- Custom aliases
-- Expiry support
-- Click tracking & analytics
-- Rate limiting
-- RESTful API
+## Services
+-Create Short URL
+Purpose: Generate a short URL
+
+-Redirect to Original URL
+Purpose: Core redirect logic
+
+-Get URL Info (Analytics-lite) 
+Purpose:Fetch metadata (original URL, created_at, expiry, etc.)
+
+-Delete Short URL
+Purpose: Remove mapping
+
+-Analytics
+Purpose: Return: Click count, Last accessed, IP/device info (if tracked)
+
+-Update URL
+Purpose: Change expiry, Update original URL (optional)
+
+-Auth
+Purpose: Multiuse systemAuth
+
+-Health Endpoint
+Purpose: Used by deployment system to check health of instances
+
+
+## Middlewawre
+-Rate Limiting is applied on,
+1) Create Short URL
+
+-Logging
+Globally
+
 
 ## Tech Stack
 
@@ -20,7 +45,6 @@ A scalable URL shortening service built with Go, Redis, and PostgreSQL supportin
 - Framework: Gin
 - Database: PostgreSQL
 - Cache: Redis
-- Messaging (optional): Kafka
 - Containerization: Docker
 
 ## Libraries
@@ -104,6 +128,7 @@ Pull requests are welcome.
 - User data save - dashboard
 - Authentication/ Athorisation (observability for admins)
 - Allow user to create many short URLs per Original URL
+- email of type Email. And get email fro jw not from header
 
 pay?
 Increase quota
