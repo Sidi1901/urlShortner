@@ -19,7 +19,7 @@ func SetupRoutes(r *gin.Engine){
 		urls := api.Group("/urls")
 		{
 			urls.POST("", handler.CreateShortURL)
-			urls.GET("/:shortCode", handler.GetURL)
+			urls.GET("/:shortCode", handler.GetURLDetails)
 			urls.DELETE("/:shortCode", handler.DeleteURL)
 			urls.PUT("/:shortCode", handler.UpdateURL)
 			urls.GET("/:shortCode/stats", handler.GetStats)

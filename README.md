@@ -133,3 +133,8 @@ Pull requests are welcome.
 pay?
 Increase quota
 
+
+
+My steps
+
+1) how to send cfg effectively following dependency injection.
