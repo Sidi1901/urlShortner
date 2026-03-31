@@ -2,32 +2,28 @@ package routes
 
 import (
 	"github.com/Sidi1901/urlShortner/internal/handler"
-	"github.com/Sidi1901/urlShortner/internal/middleware"
-	"github.com/Sidi1901/urlShortner/internal/ratelimiter"
 	"github.com/gin-gonic/gin"
-	
 )
 
-func SetupRoutes(r *gin.Engine){
+func SetupRoutes(r *gin.Engine, h *handler.Handler) {
 
 	// Public redirect
-	r.GET("/:shortcode", handler.ResolveURL)
+	r.GET("/:shortcode", h.ResolveURL)
 
 	// API Group
 	api := r.Group("/api/v1")
 	{
 		urls := api.Group("/urls")
 		{
-			urls.POST("", handler.CreateShortURL)
-			urls.GET("/:shortCode", handler.GetURLDetails)
-			urls.DELETE("/:shortCode", handler.DeleteURL)
-			urls.PUT("/:shortCode", handler.UpdateURL)
-			urls.GET("/:shortCode/stats", handler.GetStats)
+			urls.POST("", h.CreateShortURL)
+			// urls.GET("/:shortCode", h.GetURLDetails)
+			// urls.DELETE("/:shortCode", h.DeleteURL)
+			// urls.PUT("/:shortCode", h.UpdateURL)
+			// urls.GET("/:shortCode/stats", h.GetStats)
 		}
 
 	}
 
-	// Health
-
-	router.GET("/health",handler.HealthCheck)
+	// Health Check
+	r.GET("/health", h.HealthCheck)
 }
