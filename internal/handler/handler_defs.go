@@ -9,20 +9,20 @@ import (
 )
 
 // GET /:shortcode
-// func (h *Handler) ResolveURL(c *gin.Context) {
-// 	ctx := c.Request.Context()
-// 	shortcode := c.Param("shortcode")
+func (h *Handler) ResolveURL(c *gin.Context) {
+	ctx := c.Request.Context()
+	shortcode := c.Param("shortcode")
 
-// 	mappedURL, err := h.service.GetOriginalURL(ctx, shortcode)
+	mappedURL, err := h.service.ResolveShortURL(ctx, shortcode)
 
-// 	if err != nil {
-// 		c.JSON(http.StatusNotFound, gin.H{"error": "URL no found"})
-// 		return
-// 	}
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "URL no found"})
+		return
+	}
 
-// 	// 302
-// 	c.Redirect(http.StatusFound, mappedURL)
-// }
+	// 302
+	c.Redirect(http.StatusFound, mappedURL)
+}
 
 // POST /api/v1/urls
 func (h *Handler) CreateShortURL(c *gin.Context) {

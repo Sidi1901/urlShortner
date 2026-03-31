@@ -8,7 +8,7 @@ import (
 func SetupRoutes(r *gin.Engine, h *handler.Handler) {
 
 	// Public redirect
-	// r.GET("/:shortcode", handler.ResolveURL)
+	r.GET("/:shortcode", h.ResolveURL)
 
 	// API Group
 	api := r.Group("/api/v1")

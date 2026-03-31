@@ -2,6 +2,8 @@ package service
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 	"time"
 
@@ -67,16 +69,36 @@ func (s *Service) CreateShortURL(ctx context.Context, url string, ip string, exp
 	return shortFDQN, nil
 }
 
-// func GetShortURL(shortcode string) {
+func (s *Service) ResolveShortURL(ctx context.Context, shortcode string) (string, error) {
 
-// 	GetByShortCode(ctx context.Context, code string)
+	fmt.Printf("Resolving short code => %s\n", shortcode)
 
-// 	shortURLData := shortURLData{
-// 		URL           :
-// 		ShortURL      :
-// 		Expiry        :
-// 		CreatedAt     :
-// 		LastUpdatedAt :
-// 	}
+	shortURLData, err := s.repo.GetByShortCode(ctx, shortcode)
 
-// }
+	fmt.Printf("Retrieved short code data => %v\n", shortURLData)
+	fmt.Printf("Original URL => %s\n", shortURLData.OriginalURL)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return "", fmt.Errorf("Short URL not found")
+		}
+		return "", fmt.Errorf("Error occured - %s", err)
+	}
+
+	if !shortURLData.IsActive {
+		return "", fmt.Errorf("Short URL has expired")
+	}
+
+	// Check if the short URL has expired based on the expiry duration and created at time
+	if time.Since(shortURLData.CreatedAt) > time.Duration(shortURLData.ExpiryDuration)*time.Second {
+		// Mark the short URL as inactive in the database
+		shortURLData.IsActive = false
+		if err := s.repo.UpdateShortCode(ctx, shortURLData); err != nil {
+			return "", fmt.Errorf("Error updating short URL status: %s", err)
+		}
+		return "", fmt.Errorf("Short URL has expired")
+	}
+
+	return shortURLData.OriginalURL, nil
+
+}
