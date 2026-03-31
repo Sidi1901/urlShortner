@@ -1,13 +1,13 @@
 package repository
 
-import(
-	"fmt"
-	"time"
-	"errors"
+import (
 	"context"
-	"github.com/jmoiron/sqlx"
-)
+	"database/sql"
+	"errors"
+	"fmt"
 
+	"github.com/Sidi1901/urlShortner/internal/model"
+)
 
 type ShortURLRepository interface {
 	// Save Short code for an original URL
@@ -23,37 +23,33 @@ type ShortURLRepository interface {
 	DeleteShortCode(ctx context.Context, shortCode string) error
 }
 
-type shortURLRepository struct {
-	db *sqlx.DB
-}
-
-func NewURLRepository(db *sqlx.db) ShortURLRepository{
-	return &shortURLRepository{db:db}
-}
-
 // Getters and setters for ShortURLRepository
 
-func (r *shortURLRepository) SaveShortCode (ctx context.Context, sURL *model.ShortURL) error{
-	query := `INSERT into short_url (short_code, original_url, created_at, expires_at, ip_address) VALUES($1, $2, $3, $4, $5)`
+func (r *Repository) SaveShortCode(ctx context.Context, sURL *model.ShortURL) error {
+	query := `INSERT into url_shortner.short_urls (short_code, original_url, created_at, expiry_duration, ip_address, is_active) VALUES($1, $2, $3, $4, $5, $6)`
 
+	_, err := r.db.ExecContext(ctx, query, sURL.ShortCode, sURL.OriginalURL, sURL.CreatedAt, sURL.ExpiryDuration, sURL.IPAddress, sURL.IsActive)
 
-	_,err := r.db.GetContext(ctx, query, sURL.ShortCode, sURL.OriginalURL, sURL.CreatedAt, sURL.ExpiresAt, sURL.IPAddress)
+	if err != nil {
+		return fmt.Errorf("failed to save short code: %w", err)
+	}
 
 	fmt.Printf("Short code saved successfully => %s\n", sURL)
 
-	return err
+	return nil
 }
 
-
-func (r *shortURLRepository) GetByShortCode(ctx context.Context, code string) (*model.ShortURL, error) {
-	query := `SELECT short_code, original_url, created_at, expires_at, ip_address FROM short_url WHERE short_code = $1`
+func (r *Repository) GetByShortCode(ctx context.Context, code string) (*model.ShortURL, error) {
+	query := `SELECT short_code, original_url, created_at, expiry_duration, ip_address, is_active FROM url_shortner.short_urls WHERE short_code = $1`
 
 	var shortURL model.ShortURL
-	_,err := r.db.GetContext(ctx, &shortURL, query, code)
+	err := r.db.GetContext(ctx, &shortURL, query, code)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows){
+		if errors.Is(err, sql.ErrNoRows) {
 			return nil, errors.New("short code not found")
+		} else {
+			return nil, fmt.Errorf("error retrieving short code: %w", err)
 		}
 	}
 
@@ -63,11 +59,10 @@ func (r *shortURLRepository) GetByShortCode(ctx context.Context, code string) (*
 
 }
 
+func (r *Repository) UpdateShortCode(ctx context.Context, sURL *model.ShortURL) error {
+	query := `UPDATE url_shortner.short_urls SET expiry_duration = $1 WHERE short_code = $2`
 
-func (r *shortURLRepository) UpdateShortCode(ctx context.Context, sURL *model.ShortURL) error {
-	query:=`UPDATE short_url SET expires_at = $1 WHERE short_code = $2`
-	
-	_,err := r.db.ExecContext(ctx, query, sURL.ExpiresAt, sURL.ShortCode)
+	_, err := r.db.ExecContext(ctx, query, sURL.ExpiryDuration, sURL.ShortCode)
 	if err != nil {
 		return err
 	}
@@ -75,8 +70,8 @@ func (r *shortURLRepository) UpdateShortCode(ctx context.Context, sURL *model.Sh
 	return nil
 }
 
-func (r *shortURLRepository) DeleteShortCode(ctx context.Context, code string) error {
-	query := `DELETE FROM short_url WHERE short_code = $1`
+func (r *Repository) DeleteShortCode(ctx context.Context, code string) error {
+	query := `DELETE FROM url_shortner.short_urls WHERE short_code = $1`
 
 	_, err := r.db.ExecContext(ctx, query, code)
 

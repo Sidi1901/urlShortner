@@ -1,120 +1,82 @@
 package service
 
-import(
-"time"
-"fmt"
-repo "github.com/Sidi1901/urlShortner/internal/repository"
-"github.com/Sidi1901/urlShortner/pkg/utils"
-"github.com/Sidi1901/urlShortner/internal/model"
-"github.com/asaskevich/govalidator"
-"github.com/google/uuid"
+import (
+	"context"
+	"fmt"
+	"time"
+
+	"github.com/Sidi1901/urlShortner/internal/model"
+	"github.com/Sidi1901/urlShortner/pkg/utils"
+	"github.com/asaskevich/govalidator"
+	"github.com/google/uuid"
 )
 
-
-
-func CreateShortURL(URL string, ip string, ExpirySec time.Duration, ShortCode string) (string, error) {
+func (s *Service) CreateShortURL(ctx context.Context, url string, ip string, expirySec int, shortCode string) (string, error) {
 
 	// 1. Check if it is an acual URL
 	if !govalidator.IsURL(url) {
-		return ShortURLData{}, fmt.Errorf("Invalid URL")
+		return "", fmt.Errorf("Invalid URL")
 	}
 
 	// 2. Check for domain error
 	if !utils.IsValidDomain(url) {
-		return ShortURLData{}, fmt.Errorf("Invalid Domain")
+		return "", fmt.Errorf("Invalid Domain")
 	}
 
 	// 3. enforce ssl for https
 
- 	url = utils.EnforceHTTP(url)
-
-
+	url = utils.EnforceHTTP(url)
 
 	// 	After all checks have been passed, Create (or input from user) unique Custom short code for url = domain + customShortCode.
 
-	if ShortCode == "" {
-		ShortCode = uuid.New().String()[:6]
+	if shortCode == "" {
+		shortCode = uuid.New().String()[:6]
 	}
 
+	fmt.Printf("Generated short code => %s\n", shortCode)
 
-	if _,err := repo.GetByShortCode(ShortCode); err == nil {
+	// 4. Check if the custom short code is already in use. If it is, return an error message to the user.
+
+	resp, err := s.repo.GetByShortCode(ctx, shortCode)
+	if err == nil {
 		return "", fmt.Errorf("Custom short url is already in use. Please submit request with different custom short code")
 	}
 
+	fmt.Printf("Retrieved short code data => %v\n", resp)
+
+	fmt.Printf("Custom short code is available => %s\n", shortCode)
+
+	// 5. Save data in table ShortURL.
+
 	// Save data in table ShortURL.
-	var shortURL model.ShortURL
-	_ = repo.SaveShortCode(ctx, shortURL)
+	shortURL := &model.ShortURL{
+		ShortCode:      shortCode,
+		OriginalURL:    url,
+		CreatedAt:      time.Now(),
+		ExpiryDuration: expirySec,
+		IPAddress:      ip,
+		IsActive:       true}
 
+	if err := s.repo.SaveShortCode(ctx, shortURL); err != nil {
+		return "", fmt.Errorf("Error occured - %s", err)
+	}
 
+	fmt.Printf("https://%s:%s/:%s", s.cfg.Domain, s.cfg.AppPort, shortCode)
+	shortFDQN := fmt.Sprintf("https://%s:%s/%s", s.cfg.Domain, s.cfg.AppPort, shortCode)
 
-	return "", nil
+	return shortFDQN, nil
 }
 
+// func GetShortURL(shortcode string) {
 
-// func CreateShortURL(url string, ip string, expiry time.Duration, CustomShortCode string) (ShortURLData,error) {
-	
+// 	GetByShortCode(ctx context.Context, code string)
 
-
-// 	// 1. Check if it is an acual URL
-// 	if !govalidator.IsURL(url) {
-// 		return ShortURLData{}, fmt.Errorf("Invalid URL")
+// 	shortURLData := shortURLData{
+// 		URL           :
+// 		ShortURL      :
+// 		Expiry        :
+// 		CreatedAt     :
+// 		LastUpdatedAt :
 // 	}
-
-// 	// 2. Check for domain error
-// 	if !utils.IsValidDomain(url) {
-// 		return ShortURLData{}, fmt.Errorf("Invalid Domain")
-// 	}
-
-// 	// 3. enforce ssl for https
-
-// 	url = utils.EnforceHTTP(url)
-
-
-
-// 	/*
-// 		After all checks have been passed, Create (or input from user) unique Custom short code for url = domain + customShortCode.
-// 		Check unique Custom short code is not already exists in DB as well.
-
-// 	*/
-
-
-// 	if CustomShortCode == "" {
-// 		CustomShortCode = uuid.New().String()[:6]
-// 	}
-
-// 	if _,err = repo.GetByShortCode(CustomShortCode); err != nil {
-// 		return ShortURLData{}, fmt.Errorf("Custom short url is already in use")
-// 	}
-
-
-	
-// 	// Save data in table ShortURL
-// 	_ = repo.SaveShortCode(id, url, CustomShortCode, expiry, ip)
-
-// 	// Save data in table RateLimit 1) 
-
-// 	if err = repo.SetRateLimit(ip, quota-1, time.Now().Add(30*time.Minute)); err != nil {
-// 		return ShortURLData{}, fmt.Errorf("Unable to connect to the database")
-// 	}
-
-
-// 	// Get reset time for sending in response
-
-// 	ResetTime, err2 := repo.GetResetTime(ip)
-	
-
-// 	if err2 != nil {
-// 		return ShortURLData{}, fmt.Errorf("Unable to connect to the database")
-// 	}
-
-// 	RemainingResetTime := time.Until(ResetTime)
-
-// 	Result := ShortURLData{
-// 		CustomShortCodeURL : CustomShortCode,
-// 		Quota : quota-1,
-// 		ResetTime : RemainingResetTime,
-// 	}
-	
-// 	return Result, nil
 
 // }

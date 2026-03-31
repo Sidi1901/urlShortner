@@ -1,21 +1,23 @@
 package database
 
 import (
+	"context"
 	"fmt"
+	"time"
+
 	"github.com/Sidi1901/urlShortner/internal/config"
 
 	"github.com/jmoiron/sqlx"
-    _ "github.com/lib/pq" 
+	_ "github.com/lib/pq"
 )
 
 var DB *sqlx.DB
 
-
-func ConnectDB(cfg *config.Config) {
+func ConnectDB(cfg *config.Config) *sqlx.DB {
 
 	fmt.Println("Connecting to PostgreSQL database...")
 
-	ctx, cancel := context.Timeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	fmt.Printf("DB Config: Host=%s Port=%s User=%s DBName=%s SSLMode=%s\n", cfg.DBHost, cfg.DBPort, cfg.Username, cfg.DBName, cfg.SSLMode)
@@ -26,23 +28,21 @@ func ConnectDB(cfg *config.Config) {
 
 	if err != nil {
 		fmt.Println("Database Connection error: ", err)
-		return
+		return db
 	}
 
 	if err = db.Ping(); err != nil {
 		fmt.Println("Database unreachable: ", err)
-		return
+		return db
 	}
 
 	// 	PingContext is used to check if the database connection is alive within the specified context timeout.
 
 	if err := db.PingContext(ctx); err != nil {
-    	panic(err)
+		panic(err)
 	}
 
-	DB = db
-
 	fmt.Println("Connected to PostgreSQL")
+
+	return db
 }
-
-
