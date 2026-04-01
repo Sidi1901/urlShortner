@@ -20,36 +20,30 @@ type CreateShortURLResponse struct {
 }
 
 // Get Short URL data Response
-type ShortURLDataResponse struct {
-	URL           string     `json:"url"`
-	ShortCode     string     `json:"short_code"`
-	ShortURL      string     `json:"short_url"`
-	Expiry        *time.Time `json:"expiry"`
-	CreatedAt     time.Time  `json:"created_at"`
-	LastUpdatedAt time.Time  `json:"last_updated_at"`
+type ShortURLInfoResponse struct {
+	URL            string    `json:"url"`
+	ShortCode      string    `json:"short_code"`
+	ShortURL       string    `json:"short_url"`
+	ExpiryDuration int       `json:"expiry"`
+	CreatedAt      time.Time `json:"created_at"`
+	LastUpdatedAt  time.Time `json:"last_updated_at"`
 }
 
 // Get Short URL data
-type ShortURLData struct {
-	URL           string     `json:"url"`
-	ShortURL      string     `json:"short_url"`
-	Expiry        *time.Time `json:"expiry"`
-	CreatedAt     time.Time  `json:"created_at"`
-	LastUpdatedAt time.Time  `json:"last_updated_at"`
+type ShortURLInfo struct {
+	URL            string
+	ShortCode      string
+	ShortURL       string
+	ExpiryDuration int
+	CreatedAt      time.Time
+	LastUpdatedAt  time.Time
+	IsActive       bool
 }
 
 // Request Update short URL data
 type UpdateShortURLRequest struct {
-	ShortURL  string  `json:"short_url" binding:"required,url"`
-	ExpirySec *int    `json:"expiry_seconds,omitempty"`
-	URL       *string `json:"url,omitempty"`
-}
-
-// Response Update short URL data
-type UpdateShortURLResponse struct {
-	ShortURL  string    `json:"short_url" binding:"required,url"`
-	ExpirySec *int      `json:"expiry_seconds,omitempty"`
-	URL       *string   `json:"url,omitempty"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	Shortcode      string  `json:"short_code" binding:"required"`
+	ExpiryDuration *int    `json:"expiry_seconds,omitempty"`
+	URL            *string `json:"url,omitempty"`
+	IsActive       bool    `json:"is_active,omitempty"`
 }

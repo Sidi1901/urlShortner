@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/Sidi1901/urlShortner/internal/logger"
 	"github.com/Sidi1901/urlShortner/internal/model"
 )
 
@@ -31,21 +32,31 @@ func (r *Repository) SaveShortCode(ctx context.Context, sURL *model.ShortURL) er
 	_, err := r.db.ExecContext(ctx, query, sURL.ShortCode, sURL.OriginalURL, sURL.CreatedAt, sURL.ExpiryDuration, sURL.IPAddress, sURL.IsActive)
 
 	if err != nil {
+		logger.Log.WithFields(map[string]interface{}{
+			"shortcode": sURL.ShortCode,
+			"error":     err.Error(),
+		}).Error("Failed to save short URL")
 		return fmt.Errorf("failed to save short code: %w", err)
 	}
 
-	fmt.Printf("Short code saved successfully => %s\n", sURL)
+	logger.Log.WithFields(map[string]interface{}{
+		"shortcode": sURL.ShortCode,
+	}).Info("Short code saved successfully")
 
 	return nil
 }
 
-func (r *Repository) GetByShortCode(ctx context.Context, code string) (*model.ShortURL, error) {
+func (r *Repository) GetShortCode(ctx context.Context, code string) (*model.ShortURL, error) {
 	query := `SELECT short_code, original_url, created_at, expiry_duration, ip_address, is_active FROM url_shortner.short_urls WHERE short_code = $1`
 
 	var shortURL model.ShortURL
 	err := r.db.GetContext(ctx, &shortURL, query, code)
 
 	if err != nil {
+		logger.Log.WithFields(map[string]interface{}{
+			"shortcode": code,
+			"error":     err.Error(),
+		}).Error("Failed to retrieve short URL data")
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, errors.New("short code not found")
 		} else {
@@ -53,19 +64,34 @@ func (r *Repository) GetByShortCode(ctx context.Context, code string) (*model.Sh
 		}
 	}
 
-	fmt.Printf("Short code retrieved successfully => %s\n", shortURL)
+	logger.Log.WithFields(map[string]interface{}{
+		"shortcode": shortURL.ShortCode,
+	}).Info("Short code retrieved successfully")
 
 	return &shortURL, nil
 
 }
 
-func (r *Repository) UpdateShortCode(ctx context.Context, sURL *model.ShortURL) error {
-	query := `UPDATE url_shortner.short_urls SET expiry_duration = $1 WHERE short_code = $2`
+func (r *Repository) UpdateShortCode(ctx context.Context, shortURLData *model.ShortURL) error {
+	query := `UPDATE url_shortner.short_urls SET original_url = $1, expiry_duration = $2, is_active = $3, updated_at = $4 WHERE short_code = $5`
 
-	_, err := r.db.ExecContext(ctx, query, sURL.ExpiryDuration, sURL.ShortCode)
+	logger.Log.WithFields(map[string]interface{}{
+		"shortcode": shortURLData.ShortCode,
+	}).Info("Updating short URL")
+
+	_, err := r.db.ExecContext(ctx, query, shortURLData.OriginalURL, shortURLData.ExpiryDuration, shortURLData.IsActive, shortURLData.UpdatedAt, shortURLData.ShortCode)
+
 	if err != nil {
+		logger.Log.WithFields(map[string]interface{}{
+			"shortcode": shortURLData.ShortCode,
+			"error":     err.Error(),
+		}).Error("Failed to update short URL")
 		return err
 	}
+
+	logger.Log.WithFields(map[string]interface{}{
+		"shortcode": shortURLData.ShortCode,
+	}).Info("Short URL updated successfully")
 
 	return nil
 }
@@ -75,5 +101,17 @@ func (r *Repository) DeleteShortCode(ctx context.Context, code string) error {
 
 	_, err := r.db.ExecContext(ctx, query, code)
 
-	return err
+	if err != nil {
+		logger.Log.WithFields(map[string]interface{}{
+			"shortcode": code,
+			"error":     err.Error(),
+		}).Error("Failed to delete short URL")
+		return err
+	}
+
+	logger.Log.WithFields(map[string]interface{}{
+		"shortcode": code,
+	}).Info("Short URL deleted successfully")
+
+	return nil
 }
