@@ -39,7 +39,7 @@ func (r *Repository) SaveShortCode(ctx context.Context, sURL *model.ShortURL) er
 	return nil
 }
 
-func (r *Repository) GetByShortCode(ctx context.Context, code string) (*model.ShortURL, error) {
+func (r *Repository) GetShortCode(ctx context.Context, code string) (*model.ShortURL, error) {
 	query := `SELECT short_code, original_url, created_at, expiry_duration, ip_address, is_active FROM url_shortner.short_urls WHERE short_code = $1`
 
 	var shortURL model.ShortURL
@@ -59,13 +59,19 @@ func (r *Repository) GetByShortCode(ctx context.Context, code string) (*model.Sh
 
 }
 
-func (r *Repository) UpdateShortCode(ctx context.Context, sURL *model.ShortURL) error {
-	query := `UPDATE url_shortner.short_urls SET expiry_duration = $1 WHERE short_code = $2`
+func (r *Repository) UpdateShortCode(ctx context.Context, shortURLData *model.ShortURL) error {
+	query := `UPDATE url_shortner.short_urls SET original_url = $1, expiry_duration = $2, is_active = $3, updated_at = $4 WHERE short_code = $5`
 
-	_, err := r.db.ExecContext(ctx, query, sURL.ExpiryDuration, sURL.ShortCode)
+	fmt.Printf("1st In Repo %s", shortURLData.ShortCode)
+
+	_, err := r.db.ExecContext(ctx, query, shortURLData.OriginalURL, shortURLData.ExpiryDuration, shortURLData.IsActive, shortURLData.UpdatedAt, shortURLData.ShortCode)
+
 	if err != nil {
+		fmt.Printf("2nd In Repo %s", err.Error())
 		return err
 	}
+
+	fmt.Printf("3rd In Repo %s", shortURLData.ShortCode)
 
 	return nil
 }
