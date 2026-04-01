@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/Sidi1901/urlShortner/internal/dto"
+	"github.com/Sidi1901/urlShortner/internal/logger"
 	"github.com/Sidi1901/urlShortner/internal/model"
 	"github.com/Sidi1901/urlShortner/pkg/utils"
 	"github.com/asaskevich/govalidator"
@@ -18,11 +19,19 @@ func (s *Service) CreateShortURL(ctx context.Context, url string, ip string, exp
 
 	// 1. Check if it is an acual URL
 	if !govalidator.IsURL(url) {
+		logger.Log.WithFields(map[string]interface{}{
+			"url":   url,
+			"error": "Invalid URL",
+		}).Error("Failed to validate URL")
 		return "", fmt.Errorf("Invalid URL")
 	}
 
 	// 2. Check for domain error
 	if !utils.IsValidDomain(url) {
+		logger.Log.WithFields(map[string]interface{}{
+			"url":   url,
+			"error": "Invalid Domain",
+		}).Error("Failed to validate domain")
 		return "", fmt.Errorf("Invalid Domain")
 	}
 
@@ -58,10 +67,18 @@ func (s *Service) CreateShortURL(ctx context.Context, url string, ip string, exp
 	}
 
 	if err := s.repo.SaveShortCode(ctx, shortURL); err != nil {
+		logger.Log.WithFields(map[string]interface{}{
+			"shortcode": shortCode,
+			"error":     err.Error(),
+		}).Error("Failed to save short URL")
 		return "", fmt.Errorf("Error occured - %s", err)
 	}
 
-	fmt.Printf("https://%s:%s/:%s", s.cfg.Domain, s.cfg.AppPort, shortCode)
+	logger.Log.WithFields(map[string]interface{}{
+		"shortcode": shortCode,
+		"shortURL":  shortURL,
+	}).Info("Short URL created successfully")
+
 	shortFDQN := fmt.Sprintf("https://%s:%s/%s", s.cfg.Domain, s.cfg.AppPort, shortCode)
 
 	return shortFDQN, nil
@@ -72,6 +89,10 @@ func (s *Service) ResolveShortURL(ctx context.Context, shortcode string) (string
 	shortURLData, err := s.repo.GetShortCode(ctx, shortcode)
 
 	if err != nil {
+		logger.Log.WithFields(map[string]interface{}{
+			"shortcode": shortcode,
+			"error":     err.Error(),
+		}).Error("Failed to retrieve short URL data")
 		if errors.Is(err, sql.ErrNoRows) {
 			return "", fmt.Errorf("Short URL not found")
 		}
@@ -88,8 +109,15 @@ func (s *Service) ResolveShortURL(ctx context.Context, shortcode string) (string
 		shortURLData.UpdatedAt = time.Now()
 		shortURLData.IsActive = false
 		if err := s.repo.UpdateShortCode(ctx, shortURLData); err != nil {
+			logger.Log.WithFields(map[string]interface{}{
+				"shortcode": shortcode,
+				"error":     err.Error(),
+			}).Error("Failed to update short URL status")
 			return "", fmt.Errorf("Error updating short URL status: %s", err)
 		}
+		logger.Log.WithFields(map[string]interface{}{
+			"shortcode": shortcode,
+		}).Info("Short URL has expired and marked as inactive")
 		return "", fmt.Errorf("Short URL has expired")
 	}
 
@@ -99,14 +127,19 @@ func (s *Service) ResolveShortURL(ctx context.Context, shortcode string) (string
 
 func (s *Service) GetShortURLInfo(ctx context.Context, shortcode string) (dto.ShortURLInfo, error) {
 
-	fmt.Printf("In service %s", shortcode)
+	logger.Log.WithFields(map[string]interface{}{
+		"shortcode": shortcode,
+	}).Info("Fetching short URL info")
+
 	shortURLData, err := s.repo.GetShortCode(ctx, shortcode)
 
 	var shortURLInfo dto.ShortURLInfo
 
 	if err != nil {
-		fmt.Println(err.Error())
-		fmt.Errorf("Error occurred %s", err.Error())
+		logger.Log.WithFields(map[string]interface{}{
+			"shortcode": shortcode,
+			"error":     err.Error(),
+		}).Error("Failed to retrieve short URL info")
 		return shortURLInfo, err
 	}
 
@@ -129,8 +162,16 @@ func (s *Service) DeleteShortCode(ctx context.Context, shortcode string) error {
 	err := s.repo.DeleteShortCode(ctx, shortcode)
 
 	if err != nil {
+		logger.Log.WithFields(map[string]interface{}{
+			"shortcode": shortcode,
+			"error":     err.Error(),
+		}).Error("Failed to delete short URL")
 		return err
 	}
+
+	logger.Log.WithFields(map[string]interface{}{
+		"shortcode": shortcode,
+	}).Info("Short URL deleted successfully")
 
 	return nil
 }
@@ -139,6 +180,10 @@ func (s *Service) UpdateShortURLInfo(ctx context.Context, shortcode string, url 
 	// Fetch existing short URL record
 	shortURLData, err := s.repo.GetShortCode(ctx, shortcode)
 	if err != nil {
+		logger.Log.WithFields(map[string]interface{}{
+			"shortcode": shortcode,
+			"error":     err.Error(),
+		}).Error("Failed to retrieve short URL data")
 		if errors.Is(err, sql.ErrNoRows) {
 			return fmt.Errorf("Short URL not found")
 		}
@@ -156,8 +201,16 @@ func (s *Service) UpdateShortURLInfo(ctx context.Context, shortcode string, url 
 	shortURLData.UpdatedAt = time.Now()
 
 	if err := s.repo.UpdateShortCode(ctx, shortURLData); err != nil {
+		logger.Log.WithFields(map[string]interface{}{
+			"shortcode": shortcode,
+			"error":     err.Error(),
+		}).Error("Failed to update short URL")
 		return fmt.Errorf("Error updating short URL: %s", err)
 	}
+
+	logger.Log.WithFields(map[string]interface{}{
+		"shortcode": shortcode,
+	}).Info("Short URL updated successfully")
 
 	return nil
 }

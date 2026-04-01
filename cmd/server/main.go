@@ -7,6 +7,8 @@ import (
 	"github.com/Sidi1901/urlShortner/internal/config"
 	"github.com/Sidi1901/urlShortner/internal/database"
 	"github.com/Sidi1901/urlShortner/internal/handler"
+	"github.com/Sidi1901/urlShortner/internal/logger"
+	"github.com/Sidi1901/urlShortner/internal/middleware"
 	"github.com/Sidi1901/urlShortner/internal/repository"
 	"github.com/Sidi1901/urlShortner/internal/routes"
 	"github.com/Sidi1901/urlShortner/internal/service"
@@ -36,8 +38,10 @@ func main() {
 	service := service.NewService(repo, &cfg)
 	handler := handler.NewHandler(service, &cfg)
 
-	r := gin.Default()
+	logger.Init()
 
+	r := gin.New()
+	r.Use(middleware.LoggerMiddleware())
 	routes.SetupRoutes(r, handler)
 
 	fmt.Println("Server is running on http://localhost:" + cfg.AppPort)

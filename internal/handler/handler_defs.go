@@ -1,11 +1,11 @@
 package handler
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/Sidi1901/urlShortner/internal/dto"
+	"github.com/Sidi1901/urlShortner/internal/logger"
 	"github.com/gin-gonic/gin"
 )
 
@@ -17,6 +17,11 @@ func (h *Handler) ResolveURL(c *gin.Context) {
 	mappedURL, err := h.service.ResolveShortURL(ctx, shortcode)
 
 	if err != nil {
+		logger.Log.WithFields(map[string]interface{}{
+			"shortcode": shortcode,
+			"error":     "URL not found",
+		}).Warn("Failed to resolve short URL")
+
 		c.JSON(http.StatusNotFound, gin.H{"error": "URL not found"})
 		return
 	}
@@ -31,6 +36,9 @@ func (h *Handler) CreateShortURL(c *gin.Context) {
 	var request dto.CreateShortURLRequest
 
 	if err := c.ShouldBindJSON(&request); err != nil {
+		logger.Log.WithFields(map[string]interface{}{
+			"error": err.Error(),
+		}).Error("Failed to bind JSON request")
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
@@ -49,6 +57,9 @@ func (h *Handler) CreateShortURL(c *gin.Context) {
 	shortURL, err := h.service.CreateShortURL(ctx, uRL, ip, expirySec, *shortCode)
 
 	if err != nil {
+		logger.Log.WithFields(map[string]interface{}{
+			"error": err.Error(),
+		}).Error("Failed to create short URL")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -73,6 +84,10 @@ func (h *Handler) GetShortURL(c *gin.Context) {
 	shortURLData, err := h.service.GetShortURLInfo(ctx, shortcode)
 
 	if err != nil {
+		logger.Log.WithFields(map[string]interface{}{
+			"shortcode": shortcode,
+			"error":     err.Error(),
+		}).Error("Failed to get short URL info")
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
 	}
@@ -97,22 +112,22 @@ func (h *Handler) UpdateShortURLInfo(c *gin.Context) {
 	var request dto.UpdateShortURLRequest
 
 	if err := c.ShouldBindJSON(&request); err != nil {
+		logger.Log.WithFields(map[string]interface{}{
+			"error": err.Error(),
+		}).Error("Failed to bind JSON request for updating short URL info")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 	}
-
-	fmt.Printf("1st In handler %s", request.Shortcode)
 
 	err := h.service.UpdateShortURLInfo(ctx, request.Shortcode, request.URL, request.ExpiryDuration, request.IsActive)
 
-	fmt.Printf("2nd In handler %s", request.Shortcode)
-
 	if err != nil {
-		fmt.Printf("In handler %s", err.Error())
+		logger.Log.WithFields(map[string]interface{}{
+			"shortcode": request.Shortcode,
+			"error":     err.Error(),
+		}).Error("Failed to update short URL info")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-
-	fmt.Printf("3rd In handler %s", request.Shortcode)
 
 	c.JSON(http.StatusOK, gin.H{"message": "updated successfully"})
 }
@@ -125,6 +140,10 @@ func (h *Handler) DeleteShortURL(c *gin.Context) {
 	err := h.service.DeleteShortCode(ctx, shortCode)
 
 	if err != nil {
+		logger.Log.WithFields(map[string]interface{}{
+			"shortcode": shortCode,
+			"error":     err.Error(),
+		}).Error("Failed to delete short URL")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
