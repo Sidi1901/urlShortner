@@ -12,8 +12,8 @@ import (
 type UserRepository interface {
 	CreateUser(ctx context.Context, user *model.User) error
 	GetUser(ctx context.Context, email string) (model.User, error)
-	UpdateUser(ctx context.Context)
-	DeleteUser(ctx context.Context)
+	UpdateUser(ctx context.Context, user *model.User) error
+	DeleteUser(ctx context.Context, email string) error
 }
 
 func (r *Repository) CreateUser(ctx context.Context, user *model.User) error {
@@ -62,10 +62,30 @@ func (r *Repository) GetUser(ctx context.Context, email string) (model.User, err
 	return usermodel, nil
 }
 
-// func (r *Repository)UpdateUser() error {
+func (r *Repository) UpdateUser(ctx context.Context, user *model.User) error {
+	query := `UPDATE`
 
-// }
+	_, err := r.db.NamedExecContext(ctx, query, user)
 
-// func (r *Repository)DeleteUser() error {
+	if err != nil {
+		return fmt.Errorf("Failed to update user - %w", err)
+	}
 
-// }
+	return nil
+}
+
+func (r *Repository) DeleteUser(ctx context.Context, email string) error {
+	query := `DELETE`
+
+	params := map[string]interface{}{
+		"email": email,
+	}
+
+	_, err := r.db.NamedExecContext(ctx, query, params)
+
+	if err != nil {
+		return fmt.Errorf("Failed to delete user - %w", err)
+	}
+
+	return nil
+}
