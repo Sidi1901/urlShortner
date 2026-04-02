@@ -47,3 +47,13 @@ type UpdateShortURLRequest struct {
 	URL            *string `json:"url,omitempty"`
 	IsActive       bool    `json:"is_active,omitempty"`
 }
+
+// USER DTOs
+
+// Create User Request
+type CreateUserRequest struct {
+	Email    *string `json:"email" binding:"required,email"`
+	Name     *string `json:"name" binding:"required"`
+	Password *string `json:"password" binding:"required,min=8,regexp=^(?=.*[A-Za-z])(?=.*\\d)(?=.*[@$!%*#?&]).+$""`
+	UserType string  `json:"user_type"`
+}
