@@ -2,6 +2,7 @@ package routes
 
 import (
 	"github.com/Sidi1901/urlShortner/internal/handler"
+	// "github.com/Sidi1901/urlShortner/internal/middleware"
 	"github.com/gin-gonic/gin"
 )
 
@@ -10,8 +11,15 @@ func SetupRoutes(r *gin.Engine, h *handler.Handler) {
 	// Public redirect
 	r.GET("/:shortcode", h.ResolveURL)
 
+	user := r.Group("/user")
+	{
+		user.POST("/signup", h.Signup)
+		user.POST("/login", h.Login)
+	}
+
 	// API Group
 	api := r.Group("/api/v1")
+	// api.Use(middleware.Authenticate())
 	{
 		urls := api.Group("/urls")
 		{
