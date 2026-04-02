@@ -63,7 +63,14 @@ func (r *Repository) GetUser(ctx context.Context, email string) (model.User, err
 }
 
 func (r *Repository) UpdateUser(ctx context.Context, user *model.User) error {
-	query := `UPDATE`
+	query := `UPDATE url_shortner.user SET
+	email = :original_url,
+	name = :expiry_duration,
+	password = :password,
+	user_type = :users_type,
+	user_role = :user_role,
+	updated_at = :updated_at
+	WHERE email = :email`
 
 	_, err := r.db.NamedExecContext(ctx, query, user)
 
@@ -71,11 +78,15 @@ func (r *Repository) UpdateUser(ctx context.Context, user *model.User) error {
 		return fmt.Errorf("Failed to update user - %w", err)
 	}
 
+	logger.Log.WithFields(map[string]interface{}{
+		"ID": user.ID,
+	}).Info("User updated successfully")
+
 	return nil
 }
 
 func (r *Repository) DeleteUser(ctx context.Context, email string) error {
-	query := `DELETE`
+	query := `DELETE FROM url_shortner.user WHERE email = :email`
 
 	params := map[string]interface{}{
 		"email": email,
@@ -86,6 +97,10 @@ func (r *Repository) DeleteUser(ctx context.Context, email string) error {
 	if err != nil {
 		return fmt.Errorf("Failed to delete user - %w", err)
 	}
+
+	logger.Log.WithFields(map[string]interface{}{
+		"Email": email,
+	}).Info("User updated successfully")
 
 	return nil
 }

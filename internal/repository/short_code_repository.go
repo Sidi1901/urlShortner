@@ -79,10 +79,6 @@ func (r *Repository) UpdateShortCode(ctx context.Context, sURL *model.ShortURL) 
 	updated_at = :updated_at
 	WHERE short_code = :short_code`
 
-	logger.Log.WithFields(map[string]interface{}{
-		"shortcode": sURL.ShortCode,
-	}).Info("Updating short URL")
-
 	_, err := r.db.NamedExecContext(ctx, query, sURL)
 	if err != nil {
 		logger.Log.WithFields(map[string]interface{}{
