@@ -9,6 +9,8 @@ import (
 	"github.com/Sidi1901/urlShortner/internal/model"
 )
 
+var ErrUserNotFound = errors.New("user not found")
+
 type UserRepository interface {
 	CreateUser(ctx context.Context, user *model.User) error
 	GetUser(ctx context.Context, email string) (model.User, error)
@@ -17,7 +19,9 @@ type UserRepository interface {
 }
 
 func (r *Repository) CreateUser(ctx context.Context, user *model.User) error {
-	query := `INSERT INTO url_shortner.user (id, email, name, password, token, refresh_token, created_at, updated_at, user_role, user_type, user_id) VALUES (:id, :email, :name, :password, :token, :refresh_token, :created_at, :updated_at, :user_role, :user_type, :user_id)`
+	query := `INSERT INTO url_shortner.users (email, name, password, created_at, updated_at, user_role, user_type, user_id) VALUES (:email, :name, :password, :created_at, :updated_at, :user_role, :user_type, :user_id)`
+
+	fmt.Println("Creating user with user:", user)
 
 	_, err := r.db.NamedExecContext(ctx, query, user)
 
@@ -32,7 +36,7 @@ func (r *Repository) CreateUser(ctx context.Context, user *model.User) error {
 }
 
 func (r *Repository) GetUser(ctx context.Context, email string) (model.User, error) {
-	query := `SELECT * FROM url_shortner.user WHERE email = :email`
+	query := `SELECT * FROM url_shortner.users WHERE email = :email`
 
 	var usermodel model.User
 
@@ -46,24 +50,29 @@ func (r *Repository) GetUser(ctx context.Context, email string) (model.User, err
 		logger.Log.WithFields(map[string]interface{}{
 			"error": err.Error(),
 		}).Error("Failed to Get User aata")
-		return usermodel, fmt.Errorf("Failed to Get User data %w", err)
+		return usermodel, ErrUserNotFound
 	}
 
 	defer rows.Close()
 
 	if !rows.Next() {
-		return usermodel, errors.New("User not found")
+		return usermodel, ErrUserNotFound
 	}
 
-	logger.Log.WithFields(map[string]interface{}{
-		"ID": usermodel.ID,
-	}).Info("User retrieved successfully")
+	if err := rows.StructScan(&usermodel); err != nil {
+		logger.Log.WithFields(map[string]interface{}{
+			"error": err.Error(),
+		}).Error("Failed to scan user")
+		return usermodel, err
+	}
+
+	logger.Log.Info("User retrieved successfully")
 
 	return usermodel, nil
 }
 
 func (r *Repository) UpdateUser(ctx context.Context, user *model.User) error {
-	query := `UPDATE url_shortner.user SET
+	query := `UPDATE url_shortner.users SET
 	email = :original_url,
 	name = :expiry_duration,
 	password = :password,
@@ -78,15 +87,13 @@ func (r *Repository) UpdateUser(ctx context.Context, user *model.User) error {
 		return fmt.Errorf("Failed to update user - %w", err)
 	}
 
-	logger.Log.WithFields(map[string]interface{}{
-		"ID": user.ID,
-	}).Info("User updated successfully")
+	logger.Log.Info("User updated successfully")
 
 	return nil
 }
 
 func (r *Repository) DeleteUser(ctx context.Context, email string) error {
-	query := `DELETE FROM url_shortner.user WHERE email = :email`
+	query := `DELETE FROM url_shortner.users WHERE email = :email`
 
 	params := map[string]interface{}{
 		"email": email,
@@ -100,7 +107,7 @@ func (r *Repository) DeleteUser(ctx context.Context, email string) error {
 
 	logger.Log.WithFields(map[string]interface{}{
 		"Email": email,
-	}).Info("User updated successfully")
+	}).Info("User deleted successfully")
 
 	return nil
 }

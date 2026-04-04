@@ -1,6 +1,10 @@
 package dto
 
-import "time"
+import (
+	"time"
+
+	"github.com/golang-jwt/jwt/v5"
+)
 
 // Create short URL Request
 type CreateShortURLRequest struct {
@@ -52,8 +56,24 @@ type UpdateShortURLRequest struct {
 
 // Create User Request
 type CreateUserRequest struct {
-	Email    *string `json:"email" binding:"required,email"`
-	Name     *string `json:"name" binding:"required"`
-	Password *string `json:"password" binding:"required,min=8,regexp=^(?=.*[A-Za-z])(?=.*\\d)(?=.*[@$!%*#?&]).+$""`
-	UserType string  `json:"user_type"`
+	Email    string `json:"email" binding:"required,email"`
+	Name     string `json:"name" binding:"required,min=2"`
+	Password string `json:"password" binding:"required,min=8"`
+	UserType string `json:"user_type"`
+}
+
+// Create Login Request
+type CreateLoginRequest struct {
+	Email    string `json:"email" binding:"required,email"`
+	Password string `json:"password" binding:"required"`
+}
+
+// Create Claims for JWT
+type RefreshClaims struct {
+	UserID   string `json:"user_id"`
+	Email    string `json:"email"`
+	Type     string `json:"type"`
+	UserRole string `json:"user_role"`
+	UserType string `json:"user_type"`
+	jwt.RegisteredClaims
 }

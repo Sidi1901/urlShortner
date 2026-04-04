@@ -1,16 +1,32 @@
 package utils
 
-import(
+import (
 	"os"
+	"regexp"
 	"strings"
 )
 
-/*
-Function to enforce https
-It changes http -> https in URL
+var (
+	hasLetter  = regexp.MustCompile(`[A-Za-z]`)
+	hasNumber  = regexp.MustCompile(`\d`)
+	hasSpecial = regexp.MustCompile(`[@$!%*#?&]`)
+)
 
-Concepts used - slices
-*/
+func IsValidPassword(password string) bool {
+	if len(password) < 8 {
+		return false
+	}
+	if !hasLetter.MatchString(password) {
+		return false
+	}
+	if !hasNumber.MatchString(password) {
+		return false
+	}
+	if !hasSpecial.MatchString(password) {
+		return false
+	}
+	return true
+}
 
 func EnforceHTTP(url string) string {
 	if url[:4] != "http" {
@@ -20,33 +36,20 @@ func EnforceHTTP(url string) string {
 	return url
 }
 
-
-
-/*
-Function used to check for:
-- Avoiding self-calls (service calling itself)
-- Filtering internal domain requests
-- Security validation
-- Preventing redirects to same domain
-
-Concepts used - strings and string operations
-*/
-
 func IsValidDomain(url string) bool {
 
 	// Firsty, convert URL to fdqn (Fully qualified domain name)
 	// i.e https://example1.com -> example1.com
 
-	var newURL string;
+	var newURL string
 
-	newURL = strings.Replace(url, "http://","",1) //"http://example.com/page/login" -> "example.com/page/login"
-	newURL = strings.Replace(newURL, "https://","",1) // "https://example.com/page/login" -> "example.com/page/login"
-	newURL = strings.Replace(newURL, "www.","",1) //"www.example.com/page/login" -> "example.com/page/login"
-	newURL = strings.Split(newURL, "/")[0] // "example.com/page/login" -> example.com
-
+	newURL = strings.Replace(url, "http://", "", 1)     //"http://example.com/page/login" -> "example.com/page/login"
+	newURL = strings.Replace(newURL, "https://", "", 1) // "https://example.com/page/login" -> "example.com/page/login"
+	newURL = strings.Replace(newURL, "www.", "", 1)     //"www.example.com/page/login" -> "example.com/page/login"
+	newURL = strings.Split(newURL, "/")[0]              // "example.com/page/login" -> example.com
 
 	// Secondly, check if the given URL is the same as the domain configured in the environment variable, stop processing and return false.
-	
+
 	if newURL == os.Getenv("DOMAIN") {
 		return false
 	}

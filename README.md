@@ -4,7 +4,6 @@
 A scalable URL shortening service built with Go, Redis, and PostgreSQL supporting custom aliases and analytics.
 
 
-
 ## Services
 -Create Short URL
 Purpose: Generate a short URL
@@ -37,6 +36,15 @@ Purpose: Used by deployment system to check health of instances
 
 -Logging
 Globally
+
+
+## Non Functional requiements
+-Minimum redirect latency
+-1B lifetime URLs
+
+## Decision
+- 62*62*62*62*62*62 unique short url
+-Retry logic for collisions 
 
 
 ## Tech Stack
