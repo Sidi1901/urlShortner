@@ -1,14 +1,14 @@
 package utils
 
 import (
-	"fmt"
+	"errors"
 	"time"
 
+	"github.com/Sidi1901/urlShortner/internal/dto"
 	"github.com/golang-jwt/jwt/v5"
 )
 
 func GenerateAccessToken(userID, email, userRole, userType, jwtSecret string) (string, error) {
-	fmt.Println("Inside GenerateAccessToken with userID:", userID, "email:", email, "userRole:", userRole, "userType:", userType)
 	claims := jwt.MapClaims{
 		"user_id":   userID,
 		"email":     email,
@@ -23,7 +23,6 @@ func GenerateAccessToken(userID, email, userRole, userType, jwtSecret string) (s
 }
 
 func GenerateRefreshToken(userID, jwtSecret string) (string, error) {
-	fmt.Println("Inside GenerateRefreshToken with userID:", userID)
 	claims := jwt.MapClaims{
 		"user_id": userID,
 		"type":    "refresh",
@@ -32,4 +31,22 @@ func GenerateRefreshToken(userID, jwtSecret string) (string, error) {
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(jwtSecret))
+}
+
+func ValidateJWT(tokenStr, jwtSecret string) (*dto.Claims, error) {
+
+	token, err := jwt.ParseWithClaims(tokenStr, &dto.Claims{}, func(token *jwt.Token) (interface{}, error) {
+		return []byte(jwtSecret), nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	claims, ok := token.Claims.(*dto.Claims)
+	if !ok || !token.Valid {
+		return nil, errors.New("invalid token")
+	}
+
+	return claims, nil
 }

@@ -69,7 +69,7 @@ type CreateLoginRequest struct {
 }
 
 // Create Claims for JWT
-type RefreshClaims struct {
+type Claims struct {
 	UserID   string `json:"user_id"`
 	Email    string `json:"email"`
 	Type     string `json:"type"`

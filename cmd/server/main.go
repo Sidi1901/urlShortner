@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/Sidi1901/urlShortner/internal/config"
@@ -21,8 +20,6 @@ func main() {
 
 	cfg := config.Config{}
 
-	fmt.Println("Loading config from environment variables...")
-
 	godotenv.Load()
 
 	if err := env.Parse(&cfg); err != nil {
@@ -38,13 +35,13 @@ func main() {
 	service := service.NewService(repo, &cfg)
 	handler := handler.NewHandler(service, &cfg)
 
+	middleware := middleware.NewMiddleware(&cfg)
+
 	logger.Init()
 
 	r := gin.New()
 	r.Use(middleware.LoggerMiddleware())
-	routes.SetupRoutes(r, handler)
-
-	fmt.Println("Server is running on http://localhost:" + cfg.AppPort)
+	routes.SetupRoutes(r, handler, middleware)
 
 	r.Run(":" + cfg.AppPort)
 

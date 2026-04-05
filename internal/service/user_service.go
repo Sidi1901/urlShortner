@@ -12,7 +12,6 @@ import (
 	"github.com/Sidi1901/urlShortner/internal/repository"
 	"github.com/Sidi1901/urlShortner/pkg/utils"
 
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -103,23 +102,11 @@ func (s *Service) Login(ctx context.Context, email, password string) (string, st
 
 func (s *Service) RefreshToken(ctx context.Context, refreshToken string) (string, error) {
 
-	claims := &dto.RefreshClaims{}
+	claims := &dto.Claims{}
 
-	token, err := jwt.ParseWithClaims(refreshToken, claims, func(token *jwt.Token) (interface{}, error) {
-		// validate signing method
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, errs.ErrInvalidInput
-		}
-		return []byte(s.cfg.JwtSecret), nil
-	})
+	claims, err := utils.ValidateJWT(refreshToken, s.cfg.JwtSecret)
 
 	if err != nil {
-		return "", errs.ErrInvalidInput
-	}
-
-	// -------- EXPLICIT CHECKS --------
-
-	if !token.Valid {
 		return "", errs.ErrInvalidInput
 	}
 

@@ -21,8 +21,6 @@ type UserRepository interface {
 func (r *Repository) CreateUser(ctx context.Context, user *model.User) error {
 	query := `INSERT INTO url_shortner.users (email, name, password, created_at, updated_at, user_role, user_type, user_id) VALUES (:email, :name, :password, :created_at, :updated_at, :user_role, :user_type, :user_id)`
 
-	fmt.Println("Creating user with user:", user)
-
 	_, err := r.db.NamedExecContext(ctx, query, user)
 
 	if err != nil {
