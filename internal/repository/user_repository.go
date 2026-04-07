@@ -7,6 +7,8 @@ import (
 
 	"github.com/Sidi1901/urlShortner/internal/logger"
 	"github.com/Sidi1901/urlShortner/internal/model"
+
+	"github.com/jmoiron/sqlx"
 )
 
 var ErrUserNotFound = errors.New("user not found")
@@ -18,8 +20,16 @@ type UserRepository interface {
 	DeleteUser(ctx context.Context, email string) error
 }
 
-func (r *Repository) CreateUser(ctx context.Context, user *model.User) error {
-	query := `INSERT INTO url_shortner.users (email, name, password, created_at, updated_at, user_role, user_type, user_id) VALUES (:email, :name, :password, :created_at, :updated_at, :user_role, :user_type, :user_id)`
+type userSqlxRepository struct {
+	db *sqlx.DB
+}
+
+func NewUserRepository(db *sqlx.DB) UserRepository {
+	return &userSqlxRepository{db: db}
+}
+
+func (r *userSqlxRepository) CreateUser(ctx context.Context, user *model.User) error {
+	query := `INSERT INTO url_shortner.users (email, name, password, created_at, updated_at, user_role, user_type) VALUES (:email, :name, :password, :created_at, :updated_at, :user_role, :user_type)`
 
 	_, err := r.db.NamedExecContext(ctx, query, user)
 
@@ -33,7 +43,7 @@ func (r *Repository) CreateUser(ctx context.Context, user *model.User) error {
 	return nil
 }
 
-func (r *Repository) GetUser(ctx context.Context, email string) (model.User, error) {
+func (r *userSqlxRepository) GetUser(ctx context.Context, email string) (model.User, error) {
 	query := `SELECT * FROM url_shortner.users WHERE email = :email`
 
 	var usermodel model.User
@@ -47,7 +57,7 @@ func (r *Repository) GetUser(ctx context.Context, email string) (model.User, err
 	if err != nil {
 		logger.Log.WithFields(map[string]interface{}{
 			"error": err.Error(),
-		}).Error("Failed to Get User aata")
+		}).Error("Failed to Get User data")
 		return usermodel, ErrUserNotFound
 	}
 
@@ -69,10 +79,10 @@ func (r *Repository) GetUser(ctx context.Context, email string) (model.User, err
 	return usermodel, nil
 }
 
-func (r *Repository) UpdateUser(ctx context.Context, user *model.User) error {
+func (r *userSqlxRepository) UpdateUser(ctx context.Context, user *model.User) error {
 	query := `UPDATE url_shortner.users SET
-	email = :original_url,
-	name = :expiry_duration,
+	email = :email,
+	name = :name,
 	password = :password,
 	user_type = :users_type,
 	user_role = :user_role,
@@ -90,7 +100,7 @@ func (r *Repository) UpdateUser(ctx context.Context, user *model.User) error {
 	return nil
 }
 
-func (r *Repository) DeleteUser(ctx context.Context, email string) error {
+func (r *userSqlxRepository) DeleteUser(ctx context.Context, email string) error {
 	query := `DELETE FROM url_shortner.users WHERE email = :email`
 
 	params := map[string]interface{}{

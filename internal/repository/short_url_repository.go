@@ -7,20 +7,29 @@ import (
 
 	"github.com/Sidi1901/urlShortner/internal/logger"
 	"github.com/Sidi1901/urlShortner/internal/model"
+
+	"github.com/jmoiron/sqlx"
 )
 
 type ShortURLRepository interface {
 	SaveShortCode(ctx context.Context, shortURL *model.ShortURL) error
-	GetByShortCode(ctx context.Context, code string) (*model.ShortURL, error)
+	GetShortCode(ctx context.Context, code string) (*model.ShortURL, error)
 	UpdateShortCode(ctx context.Context, shortURL *model.ShortURL) error
 	DeleteShortCode(ctx context.Context, shortCode string) error
 }
 
+type shortURLRepository struct {
+	db *sqlx.DB
+}
+
+func NewShortURLRepository(db *sqlx.DB) ShortURLRepository {
+	return &shortURLRepository{db: db}
+}
+
 // ---------------- CREATE ----------------
-func (r *Repository) SaveShortCode(ctx context.Context, sURL *model.ShortURL) error {
+func (r *shortURLRepository) SaveShortCode(ctx context.Context, sURL *model.ShortURL) error {
 	query := `INSERT INTO url_shortner.short_urls
-	(short_code, original_url, created_at, expiry_duration, ip_address, is_active)
-	VALUES (:short_code, :original_url, :created_at, :expiry_duration, :ip_address, :is_active)`
+	(short_code, original_url, created_at, expiry_duration, ip_address, is_active, user_id) VALUES (:short_code, :original_url, :created_at, :expiry_duration, :ip_address, :is_active, :user_id)`
 
 	_, err := r.db.NamedExecContext(ctx, query, sURL)
 	if err != nil {
@@ -39,8 +48,8 @@ func (r *Repository) SaveShortCode(ctx context.Context, sURL *model.ShortURL) er
 }
 
 // ---------------- READ ----------------
-func (r *Repository) GetShortCode(ctx context.Context, code string) (*model.ShortURL, error) {
-	query := `SELECT short_code, original_url, created_at, expiry_duration, ip_address, is_active
+func (r *shortURLRepository) GetShortCode(ctx context.Context, code string) (*model.ShortURL, error) {
+	query := `SELECT short_code, original_url, created_at, expiry_duration, ip_address, is_active, user_id
 	FROM url_shortner.short_urls
 	WHERE short_code = :short_code`
 
@@ -71,7 +80,7 @@ func (r *Repository) GetShortCode(ctx context.Context, code string) (*model.Shor
 }
 
 // ---------------- UPDATE ----------------
-func (r *Repository) UpdateShortCode(ctx context.Context, sURL *model.ShortURL) error {
+func (r *shortURLRepository) UpdateShortCode(ctx context.Context, sURL *model.ShortURL) error {
 	query := `UPDATE url_shortner.short_urls SET
 	original_url = :original_url,
 	expiry_duration = :expiry_duration,
@@ -96,7 +105,7 @@ func (r *Repository) UpdateShortCode(ctx context.Context, sURL *model.ShortURL) 
 }
 
 // ---------------- DELETE ----------------
-func (r *Repository) DeleteShortCode(ctx context.Context, code string) error {
+func (r *shortURLRepository) DeleteShortCode(ctx context.Context, code string) error {
 	query := `DELETE FROM url_shortner.short_urls WHERE short_code = :short_code`
 
 	params := map[string]interface{}{

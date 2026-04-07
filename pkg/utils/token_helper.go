@@ -8,7 +8,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-func GenerateAccessToken(userID, email, userRole, userType, jwtSecret string) (string, error) {
+func GenerateAccessToken(userID int, email, userRole, userType, jwtSecret string) (string, error) {
 	claims := jwt.MapClaims{
 		"user_id":   userID,
 		"email":     email,
@@ -22,7 +22,7 @@ func GenerateAccessToken(userID, email, userRole, userType, jwtSecret string) (s
 	return token.SignedString([]byte(jwtSecret))
 }
 
-func GenerateRefreshToken(userID, jwtSecret string) (string, error) {
+func GenerateRefreshToken(userID int, jwtSecret string) (string, error) {
 	claims := jwt.MapClaims{
 		"user_id": userID,
 		"type":    "refresh",

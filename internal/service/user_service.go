@@ -6,17 +6,35 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/Sidi1901/urlShortner/internal/config"
 	"github.com/Sidi1901/urlShortner/internal/dto"
 	errs "github.com/Sidi1901/urlShortner/internal/errors"
 	"github.com/Sidi1901/urlShortner/internal/model"
 	"github.com/Sidi1901/urlShortner/internal/repository"
 	"github.com/Sidi1901/urlShortner/pkg/utils"
 
-	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
-func (s *Service) CreateUser(ctx context.Context, email, name, password, userType string) error {
+type UserService interface {
+	CreateUser(ctx context.Context, email, name, password, userType string) error
+	Login(ctx context.Context, email, password string) (string, string, error)
+	RefreshToken(ctx context.Context, refreshToken string) (string, error)
+}
+
+type userService struct {
+	repo repository.UserRepository
+	cfg  *config.Config
+}
+
+func NewUserService(repo repository.UserRepository, cfg *config.Config) *userService {
+	return &userService{
+		repo: repo,
+		cfg:  cfg,
+	}
+}
+
+func (s *userService) CreateUser(ctx context.Context, email, name, password, userType string) error {
 
 	if email == "" {
 		return fmt.Errorf("email is required %w", errs.ErrInvalidInput)
@@ -58,7 +76,6 @@ func (s *Service) CreateUser(ctx context.Context, email, name, password, userTyp
 		Password:  string(hashedPassword),
 		UserType:  userType,
 		UserRole:  "user",
-		UserID:    uuid.New().String(),
 		CreatedAt: now,
 		UpdatedAt: now,
 	}
@@ -70,7 +87,7 @@ func (s *Service) CreateUser(ctx context.Context, email, name, password, userTyp
 	return nil
 }
 
-func (s *Service) Login(ctx context.Context, email, password string) (string, string, error) {
+func (s *userService) Login(ctx context.Context, email, password string) (string, string, error) {
 
 	user, err := s.repo.GetUser(ctx, email)
 
@@ -84,14 +101,14 @@ func (s *Service) Login(ctx context.Context, email, password string) (string, st
 	}
 
 	// generate tokens
-	accessToken, err := utils.GenerateAccessToken(user.UserID, user.Email, user.UserRole, user.UserType, s.cfg.JwtSecret)
+	accessToken, err := utils.GenerateAccessToken(user.ID, user.Email, user.UserRole, user.UserType, s.cfg.JwtSecret)
 
 	if err != nil {
 		return "", "", errs.ErrInternal
 	}
 
 	// generate refresh token
-	refreshToken, err := utils.GenerateRefreshToken(user.UserID, s.cfg.JwtSecret)
+	refreshToken, err := utils.GenerateRefreshToken(user.ID, s.cfg.JwtSecret)
 
 	if err != nil {
 		return "", "", errs.ErrInternal
@@ -100,7 +117,7 @@ func (s *Service) Login(ctx context.Context, email, password string) (string, st
 	return accessToken, refreshToken, nil
 }
 
-func (s *Service) RefreshToken(ctx context.Context, refreshToken string) (string, error) {
+func (s *userService) RefreshToken(ctx context.Context, refreshToken string) (string, error) {
 
 	claims := &dto.Claims{}
 

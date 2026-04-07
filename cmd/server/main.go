@@ -31,9 +31,15 @@ func main() {
 		log.Fatal("Failed to connect to database")
 	}
 
-	repo := repository.NewRepository(db, &cfg)
-	service := service.NewService(repo, &cfg)
-	handler := handler.NewHandler(service, &cfg)
+	shortURLRepo := repository.NewShortURLRepository(db)
+	userRepo := repository.NewUserRepository(db)
+
+	shortURLService := service.NewShortURLService(shortURLRepo, userRepo, &cfg)
+	userService := service.NewUserService(userRepo, &cfg)
+
+	shortURLHandler := handler.NewURLHandler(shortURLService)
+	userHandler := handler.NewUserHandler(userService)
+	healthHandler := handler.NewHealthHandler()
 
 	middleware := middleware.NewMiddleware(&cfg)
 
@@ -41,7 +47,14 @@ func main() {
 
 	r := gin.New()
 	r.Use(middleware.LoggerMiddleware())
-	routes.SetupRoutes(r, handler, middleware)
+
+	routeReg := []routes.RouteRegistrar{
+		userHandler,
+		shortURLHandler,
+		healthHandler,
+	}
+
+	routes.SetupRoutes(r, middleware, routeReg)
 
 	r.Run(":" + cfg.AppPort)
 

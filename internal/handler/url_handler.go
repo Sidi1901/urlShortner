@@ -6,11 +6,35 @@ import (
 
 	"github.com/Sidi1901/urlShortner/internal/dto"
 	"github.com/Sidi1901/urlShortner/internal/logger"
+	"github.com/Sidi1901/urlShortner/internal/service"
 	"github.com/gin-gonic/gin"
 )
 
+type urlHandler struct {
+	service service.ShortURLService
+}
+
+func NewURLHandler(service service.ShortURLService) *urlHandler {
+	return &urlHandler{service: service}
+}
+
+func (h *urlHandler) RegisterPublicRoutes(r *gin.Engine) {
+	// Public redirect
+	r.GET("/r/:shortcode", h.ResolveURL)
+}
+
+func (h *urlHandler) RegisterProtectedRoutes(rg *gin.RouterGroup) {
+	urls := rg.Group("/urls")
+	{
+		urls.POST("/", h.CreateShortURL)
+		urls.GET("/:shortcode", h.GetShortURL)
+		urls.DELETE("/:shortcode", h.DeleteShortURL)
+		urls.PUT("/", h.UpdateShortURLInfo)
+	}
+}
+
 // GET /:shortcode
-func (h *Handler) ResolveURL(c *gin.Context) {
+func (h *urlHandler) ResolveURL(c *gin.Context) {
 	ctx := c.Request.Context()
 	shortcode := c.Param("shortcode")
 
@@ -31,7 +55,7 @@ func (h *Handler) ResolveURL(c *gin.Context) {
 }
 
 // POST /api/v1/urls
-func (h *Handler) CreateShortURL(c *gin.Context) {
+func (h *urlHandler) CreateShortURL(c *gin.Context) {
 	ctx := c.Request.Context()
 	var request dto.CreateShortURLRequest
 
@@ -46,15 +70,17 @@ func (h *Handler) CreateShortURL(c *gin.Context) {
 	uRL := request.URL
 	shortCode := request.ShortCode
 	ip := c.ClientIP()
+	email := request.Email
+	expirySec := request.ExpiryDuration
 
-	var expirySec int
-	if request.ExpiryDuration == nil {
-		expirySec = 24 * 3600 // default expiry time of 24 hours
-	} else {
-		expirySec = *request.ExpiryDuration
-	}
+	logger.Log.WithFields(map[string]interface{}{
+		"email":  email,
+		"url":    uRL,
+		"ip":     ip,
+		"expiry": expirySec,
+	}).Info("Received request to create short URL")
 
-	shortURL, err := h.service.CreateShortURL(ctx, uRL, ip, expirySec, *shortCode)
+	shortURL, expirySecResp, err := h.service.CreateShortURL(ctx, uRL, ip, expirySec, *shortCode, email)
 
 	if err != nil {
 		logger.Log.WithFields(map[string]interface{}{
@@ -68,7 +94,7 @@ func (h *Handler) CreateShortURL(c *gin.Context) {
 		URL:            uRL,
 		ShortCode:      *shortCode,
 		ShortURL:       shortURL,
-		ExpiryDuration: expirySec,
+		ExpiryDuration: expirySecResp,
 		CreatedAt:      time.Now(),
 		UpdatedAt:      time.Now(),
 	}
@@ -77,7 +103,7 @@ func (h *Handler) CreateShortURL(c *gin.Context) {
 }
 
 // GET /api/v1/urls/:shortCode
-func (h *Handler) GetShortURL(c *gin.Context) {
+func (h *urlHandler) GetShortURL(c *gin.Context) {
 	ctx := c.Request.Context()
 	shortcode := c.Param("shortcode")
 
@@ -105,7 +131,7 @@ func (h *Handler) GetShortURL(c *gin.Context) {
 }
 
 // PUT /api/v1/urls/:shortcode
-func (h *Handler) UpdateShortURLInfo(c *gin.Context) {
+func (h *urlHandler) UpdateShortURLInfo(c *gin.Context) {
 
 	ctx := c.Request.Context()
 
@@ -133,7 +159,7 @@ func (h *Handler) UpdateShortURLInfo(c *gin.Context) {
 }
 
 // DELETE /api/v1/urls/:shortCode
-func (h *Handler) DeleteShortURL(c *gin.Context) {
+func (h *urlHandler) DeleteShortURL(c *gin.Context) {
 	ctx := c.Request.Context()
 	shortCode := c.Param("shortcode")
 
@@ -168,11 +194,3 @@ func (h *Handler) DeleteShortURL(c *gin.Context) {
 // 		"message": "stats endpoint",
 // 	})
 // }
-
-// GET /health
-func (h *Handler) HealthCheck(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"status":  "UP",
-		"message": "Service is healthy",
-	})
-}

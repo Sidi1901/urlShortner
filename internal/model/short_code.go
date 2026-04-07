@@ -13,4 +13,5 @@ type ShortURL struct {
 	ExpiryDuration int       `db:"expiry_duration"`
 	IPAddress      string    `db:"ip_address"`
 	IsActive       bool      `db:"is_active"`
+	UserID         int       `db:"user_id"` // FOREIGN KEY to users table
 }

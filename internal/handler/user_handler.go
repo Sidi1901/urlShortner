@@ -6,13 +6,33 @@ import (
 
 	"github.com/Sidi1901/urlShortner/internal/dto"
 	errs "github.com/Sidi1901/urlShortner/internal/errors"
+	"github.com/Sidi1901/urlShortner/internal/service"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator"
 )
 
+type userHandler struct {
+	service service.UserService
+}
+
+func NewUserHandler(service service.UserService) *userHandler {
+	return &userHandler{service: service}
+}
+
 var validate = validator.New()
 
-func (h *Handler) Signup(c *gin.Context) {
+func (h *userHandler) RegisterPublicRoutes(r *gin.Engine) {
+	user := r.Group("/user")
+	{
+		user.POST("/signup", h.Signup)
+		user.POST("/login", h.Login)
+		user.POST("/refresh", h.RefreshToken)
+	}
+}
+
+func (h *userHandler) RegisterProtectedRoutes(rg *gin.RouterGroup) {}
+
+func (h *userHandler) Signup(c *gin.Context) {
 	ctx := c.Request.Context()
 	var user dto.CreateUserRequest
 
@@ -44,7 +64,7 @@ func (h *Handler) Signup(c *gin.Context) {
 	return
 }
 
-func (h *Handler) Login(c *gin.Context) {
+func (h *userHandler) Login(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	var req dto.CreateLoginRequest
@@ -75,7 +95,7 @@ func (h *Handler) Login(c *gin.Context) {
 	})
 }
 
-func (h *Handler) RefreshToken(c *gin.Context) {
+func (h *userHandler) RefreshToken(c *gin.Context) {
 	var req struct {
 		RefreshToken string `json:"refresh_token" binding:"required"`
 	}

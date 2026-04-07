@@ -9,7 +9,6 @@ type User struct {
 	Password  string    `db:"password"`
 	UserType  string    `db:"user_type"`
 	UserRole  string    `db:"user_role"`
-	UserID    string    `db:"user_id"`
 	CreatedAt time.Time `db:"created_at"`
 	UpdatedAt time.Time `db:"updated_at"`
 }

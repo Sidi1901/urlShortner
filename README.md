@@ -146,3 +146,10 @@ Increase quota
 My steps
 
 1) how to send cfg effectively following dependency injection.
+
+
+Repository package is following DIP principle design.
+For example sqlx concerte class is implementin user reposioty interface.
+If later it's sql conconcrete class need, we can add one one concrete class implementing user repository interface. 
+
+It's also follwing SIP and IP, as interface is segrated to allow needed and related functioanilities.

@@ -8,9 +8,11 @@ import (
 
 // Create short URL Request
 type CreateShortURLRequest struct {
+	Email          string  `json:"email" binding:"required,email"`
 	URL            string  `json:"url" binding:"required,url"`
 	ShortCode      *string `json:"short_code,omitempty"`
 	ExpiryDuration *int    `json:"expiry_seconds,omitempty"`
+	UserType       string  `json:"user_type"`
 }
 
 // Create short URL Response
@@ -59,7 +61,7 @@ type CreateUserRequest struct {
 	Email    string `json:"email" binding:"required,email"`
 	Name     string `json:"name" binding:"required,min=2"`
 	Password string `json:"password" binding:"required,min=8"`
-	UserType string `json:"user_type"`
+	UserType string `json:"user_type" binding:"required,oneof=free premium"`
 }
 
 // Create Login Request
@@ -70,7 +72,7 @@ type CreateLoginRequest struct {
 
 // Create Claims for JWT
 type Claims struct {
-	UserID   string `json:"user_id"`
+	UserID   int    `json:"user_id"`
 	Email    string `json:"email"`
 	Type     string `json:"type"`
 	UserRole string `json:"user_role"`
