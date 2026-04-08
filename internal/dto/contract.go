@@ -12,7 +12,6 @@ type CreateShortURLRequest struct {
 	URL            string  `json:"url" binding:"required,url"`
 	ShortCode      *string `json:"short_code,omitempty"`
 	ExpiryDuration *int    `json:"expiry_seconds,omitempty"`
-	UserType       string  `json:"user_type"`
 }
 
 // Create short URL Response

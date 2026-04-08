@@ -10,7 +10,7 @@ type RouteRegistrar interface {
 	RegisterProtectedRoutes(rg *gin.RouterGroup)
 }
 
-func SetupRoutes(r *gin.Engine, mw *middleware.Middleware, handlers []RouteRegistrar) {
+func SetupRoutes(r *gin.Engine, rateMW *middleware.RateLimitMiddleware, authMW *middleware.AuthMiddleware, handlers []RouteRegistrar) {
 
 	// 1. Public routes
 	for _, h := range handlers {
@@ -19,7 +19,8 @@ func SetupRoutes(r *gin.Engine, mw *middleware.Middleware, handlers []RouteRegis
 
 	// 2. Protected routes
 	api := r.Group("/api/v1")
-	api.Use(mw.AuthMiddleware())
+	api.Use(authMW.Authenticate())
+	api.Use(rateMW.RateLimit())
 
 	for _, h := range handlers {
 		h.RegisterProtectedRoutes(api)

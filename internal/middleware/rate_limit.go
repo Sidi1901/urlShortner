@@ -1,48 +1,78 @@
 package middleware
 
-// import(
-// 	"net"
-// 	"strings"
-// 	"github.com/Sidi1901/urlShortner/internal/ratelimiter"
-// 	"github.com/gin-gonic/gin"
+import (
+	"fmt"
+	"net/http"
 
-// )
+	"github.com/Sidi1901/urlShortner/internal/service"
+	"github.com/gin-gonic/gin"
+)
 
-// func GetClientIP(c *gin.Context) string {
-// 	ip := c.GetHeader("X-Forwarded-For")
+type RateLimitMiddleware struct {
+	limiter service.RateLimiter
+}
 
-// 	if ip != "" {
-// 		return strings.Split(ip, ",")[0]
-// 	}
+func NewRateLimitMiddlware(l service.RateLimiter) *RateLimitMiddleware {
+	return &RateLimitMiddleware{limiter: l}
+}
 
-// 	ip = c.GetHeader("X-Real-IP")
+func (m *RateLimitMiddleware) RateLimit() gin.HandlerFunc {
+	return func(c *gin.Context) {
 
-// 	if ip != "" {
-// 		return ip
-// 	}
+		// ip based rate limiting
+		ip := c.ClientIP()
+		userID, _ := c.Get(ContextUserIDKey)
 
-// 	host, _, _, net.SplitHostPort(c.Request.RemoteAddr)
+		ipKey := fmt.Sprintf("rate_limit:ip:%s", ip)
+		ipCapacity := 5.0
+		ipRefill := 1.0
 
-// 	return host
-// }
+		allowed, _, err := m.limiter.IsAllowed(ipKey, ipCapacity, ipRefill)
 
-// func RateLimit(limiter rateLimiter.Limiter) gin.HandleFunc {
-// 	return func(c *gin.Context){
-// 		email := c.GetHeader("X-User-Email")
-// 		ip := getClientIP(c	)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
+			return
+		}
 
-// 		allowed, err := limiter.Allow(c.Request.Context(), email, ip)
+		if !allowed {
+			c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{
+				"error": "too many requests (ip limit)",
+			})
+			return
+		}
 
-// 		if err != nil {
-// 			c.AbortWithStatusJSON(500, gin.H{"error":"internal error"})
-// 			return
-// 		}
+		// User ID based rate limiting
+		if userID != "" {
 
-// 		if !allowed {
-// 			c.AbortWithStatusJSON(429, gin.H{"error":"rate limit exceeded"})
-// 			return
-// 		}
+			userKey := fmt.Sprintf("rate_limit:user:%s", userID)
 
-// 		c.Next()
-// 	}
-// }
+			isPremium := false // TODO: fetch from DB
+
+			capacity := 10.0
+			refill := 0.4
+
+			if isPremium {
+				capacity = 100
+				refill = 10
+			}
+
+			allowed, remaining, err := m.limiter.IsAllowed(userKey, capacity, refill)
+			if err != nil {
+				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
+				return
+			}
+
+			if !allowed {
+				c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{
+					"error": "too many requests (user limit)",
+				})
+				return
+			}
+
+			c.Header("X-RateLimit-Remaining", fmt.Sprintf("%.0f", remaining))
+		}
+
+		c.Next()
+
+	}
+}

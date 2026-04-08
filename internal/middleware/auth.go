@@ -3,11 +3,20 @@ package middleware
 import (
 	"strings"
 
+	"github.com/Sidi1901/urlShortner/internal/config"
 	"github.com/Sidi1901/urlShortner/pkg/utils"
 	"github.com/gin-gonic/gin"
 )
 
-func (m *Middleware) AuthMiddleware() gin.HandlerFunc {
+type AuthMiddleware struct {
+	Cfg *config.Config
+}
+
+func NewAuthMiddleware(cfg *config.Config) *AuthMiddleware {
+	return &AuthMiddleware{Cfg: cfg}
+}
+
+func (m *AuthMiddleware) Authenticate() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 
@@ -29,8 +38,7 @@ func (m *Middleware) AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		c.Set("user_id", claims.UserID)
-		c.Set("email", claims.Email)
+		c.Set(ContextUserIDKey, claims.UserID)
 
 		c.Next()
 	}

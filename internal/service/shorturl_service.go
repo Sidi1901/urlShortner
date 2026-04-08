@@ -37,14 +37,6 @@ func NewShortURLService(urlRepo repository.ShortURLRepository, userRepo reposito
 
 func (s *shortURLService) CreateShortURL(ctx context.Context, url string, ip string, expirySec *int, shortCode string, email string) (string, int, error) {
 
-	logger.Log.WithFields(map[string]interface{}{
-		"url":       url,
-		"ip":        ip,
-		"expirySec": expirySec,
-		"shortCode": shortCode,
-		"email":     email,
-	}).Info("Creating short URL")
-
 	// 1. Check if it is an acual URL
 	if !govalidator.IsURL(url) {
 		logger.Log.WithFields(map[string]interface{}{
@@ -77,9 +69,7 @@ func (s *shortURLService) CreateShortURL(ctx context.Context, url string, ip str
 	}
 
 	logger.Log.WithFields(map[string]interface{}{
-		"email":     email,
-		"userData":  userData,
-		"expirySec": expirySec,
+		"userID": userData.ID,
 	}).Info("User data retrieved successfully")
 
 	// Ensure expirySec is non-nil before dereferencing to avoid nil pointer panic.
@@ -91,7 +81,6 @@ func (s *shortURLService) CreateShortURL(ctx context.Context, url string, ip str
 			*expirySec = defaultExpiry
 		}
 	}
-	fmt.Println("Expiry is ", *expirySec)
 
 	if shortCode == "" {
 

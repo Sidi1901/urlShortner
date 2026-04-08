@@ -6,7 +6,7 @@ import (
 	"github.com/Sidi1901/urlShortner/internal/config"
 	"github.com/Sidi1901/urlShortner/internal/database"
 	"github.com/Sidi1901/urlShortner/internal/handler"
-	"github.com/Sidi1901/urlShortner/internal/logger"
+	"github.com/Sidi1901/urlShortner/internal/infra"
 	"github.com/Sidi1901/urlShortner/internal/middleware"
 	"github.com/Sidi1901/urlShortner/internal/repository"
 	"github.com/Sidi1901/urlShortner/internal/routes"
@@ -26,13 +26,25 @@ func main() {
 		log.Fatalf("Unable to load config: %v", err)
 	}
 
-	db := database.ConnectDB(&cfg)
-	if db == nil {
-		log.Fatal("Failed to connect to database")
+	PostgresDB := database.ConnectDB(&cfg)
+	if PostgresDB == nil {
+		log.Fatal("Failed to connect to Postges Database")
 	}
 
-	shortURLRepo := repository.NewShortURLRepository(db)
-	userRepo := repository.NewUserRepository(db)
+	RedisClient := database.NewRedisClient(&cfg)
+
+	if RedisClient == nil {
+		log.Fatal("Failed to connect to Redis Databse")
+	}
+
+	RateLimiter := infra.NewRateLimiter(RedisClient.Client, infra.TokenBucketLua)
+
+	rateLimitMiddleware := middleware.NewRateLimitMiddlware(RateLimiter)
+	loggerMiddleware := middleware.NewLoggerMiddleware("info")
+	authMiddleware := middleware.NewAuthMiddleware(&cfg)
+
+	shortURLRepo := repository.NewShortURLRepository(PostgresDB.DB)
+	userRepo := repository.NewUserRepository(PostgresDB.DB)
 
 	shortURLService := service.NewShortURLService(shortURLRepo, userRepo, &cfg)
 	userService := service.NewUserService(userRepo, &cfg)
@@ -41,12 +53,14 @@ func main() {
 	userHandler := handler.NewUserHandler(userService)
 	healthHandler := handler.NewHealthHandler()
 
-	middleware := middleware.NewMiddleware(&cfg)
-
-	logger.Init()
-
 	r := gin.New()
-	r.Use(middleware.LoggerMiddleware())
+	r.Use(loggerMiddleware.Logger())
+
+	// Serve static files
+	r.Static("/static", "./web/static")
+
+	// Load HTML templates
+	r.LoadHTMLGlob("web/templates/*")
 
 	routeReg := []routes.RouteRegistrar{
 		userHandler,
@@ -54,7 +68,7 @@ func main() {
 		healthHandler,
 	}
 
-	routes.SetupRoutes(r, middleware, routeReg)
+	routes.SetupRoutes(r, rateLimitMiddleware, authMiddleware, routeReg)
 
 	r.Run(":" + cfg.AppPort)
 
