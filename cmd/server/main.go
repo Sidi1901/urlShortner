@@ -52,6 +52,7 @@ func main() {
 	shortURLHandler := handler.NewURLHandler(shortURLService)
 	userHandler := handler.NewUserHandler(userService)
 	healthHandler := handler.NewHealthHandler()
+	webHandler := handler.NewWebHandler()
 
 	r := gin.New()
 	r.Use(loggerMiddleware.Logger())
@@ -66,6 +67,7 @@ func main() {
 		userHandler,
 		shortURLHandler,
 		healthHandler,
+		webHandler,
 	}
 
 	routes.SetupRoutes(r, rateLimitMiddleware, authMiddleware, routeReg)

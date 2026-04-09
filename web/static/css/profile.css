@@ -1,0 +1,98 @@
+
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+
+body {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    min-height: 100vh;
+    color: #fff;
+}
+
+.container {
+    max-width: 900px;
+    margin: 40px auto;
+    padding: 20px;
+}
+
+.card {
+    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(15px);
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+}
+
+.tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 25px;
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 12px;
+    border-radius: 25px;
+    border: none;
+    cursor: pointer;
+    background: rgba(255,255,255,0.2);
+    color: white;
+    transition: 0.3s;
+    font-weight: 500;
+}
+
+.tab-btn.active {
+    background: linear-gradient(to right, #ff7a18, #ffb347);
+    color: white;
+}
+
+.tab-content {
+    display: none;
+    animation: fade 0.4s ease;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+@keyframes fade {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Personal Info */
+.info-item {
+    margin-bottom: 15px;
+}
+
+.info-item label {
+    font-size: 0.85rem;
+    opacity: 0.8;
+}
+
+.info-item p {
+    font-size: 1rem;
+    margin-top: 4px;
+}
+
+/* URL List */
+.url-item {
+    background: rgba(255,255,255,0.15);
+    padding: 15px;
+    border-radius: 12px;
+    margin-bottom: 12px;
+}
+
+.url-item a {
+    color: #fff;
+    text-decoration: underline;
+    word-break: break-all;
+}
+
+.url-meta {
+    font-size: 0.8rem;
+    opacity: 0.8;
+    margin-top: 6px;
+}
+
+@media(max-width: 600px) {
+    .container { margin: 20px auto; }
+}

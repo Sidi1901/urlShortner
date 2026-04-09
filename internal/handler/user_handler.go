@@ -22,7 +22,8 @@ func NewUserHandler(service service.UserService) *userHandler {
 var validate = validator.New()
 
 func (h *userHandler) RegisterPublicRoutes(r *gin.Engine) {
-	user := r.Group("/user")
+
+	user := r.Group("/users")
 	{
 		user.POST("/signup", h.Signup)
 		user.POST("/login", h.Login)

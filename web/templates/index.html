@@ -1,1 +1,67 @@
-            
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>URL Shortener</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../static/css/home.css">
+</head>
+<body>
+
+  <!-- Navbar -->
+  <div class="navbar">
+    <div class="logo">ToShort</div>
+    <div class="nav-links">
+      <a href="/login">Login</a>
+      <div class="profile">U</div>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div class="container">
+    <div class="card">
+      <h1>Shorten Your URL</h1>
+
+      <div class="input-group">
+        <input type="text" id="longUrl" placeholder="Enter long URL *" required>
+      </div>
+
+      <div class="input-group">
+        <input type="text" id="customCode" placeholder="Custom short name (optional)">
+      </div>
+
+      <!-- Enhanced Expiration -->
+      <div class="input-group">
+        <label class="expiry-label">Expiration (optional)</label>
+        <div class="expiry-container">
+          <div class="preset-options">
+            <button class="preset-btn" onclick="setExpiry(1)">1 Hour</button>
+            <button class="preset-btn" onclick="setExpiry(24)">24 Hours</button>
+            <button class="preset-btn" onclick="setExpiry(168)">7 Days</button>
+          </div>
+          <div class="datetime-row">
+            <input type="date" id="expiryDate">
+            <input type="time" id="expiryTime">
+          </div>
+        </div>
+      </div>
+
+      <button class="btn" onclick="generateUrl()">Generate</button>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal" id="modal">
+    <div class="modal-content">
+      <h2>Success 🎉</h2>
+      <p>Your shortened URL:</p>
+      <a id="shortLink" href="#" target="_blank"></a>
+      <button class="close-btn" onclick="closeModal()">Close</button>
+    </div>
+  </div>
+
+<script src="../static/js/app.js"></script>
+
+</body>
+</html>

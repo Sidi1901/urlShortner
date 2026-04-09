@@ -8,21 +8,21 @@ import (
 	"time"
 
 	"github.com/Sidi1901/urlShortner/internal/config"
-	"github.com/Sidi1901/urlShortner/internal/dto"
+	"github.com/Sidi1901/urlShortner/internal/domain"
+	errs "github.com/Sidi1901/urlShortner/internal/errors"
 	"github.com/Sidi1901/urlShortner/internal/logger"
 	"github.com/Sidi1901/urlShortner/internal/model"
 	"github.com/Sidi1901/urlShortner/internal/repository"
 	"github.com/Sidi1901/urlShortner/pkg/utils"
 	"github.com/asaskevich/govalidator"
-	"github.com/google/uuid"
 )
 
 type ShortURLService interface {
 	CreateShortURL(ctx context.Context, url string, ip string, expirySec *int, shortCode string, email string) (string, int, error)
 	ResolveShortURL(ctx context.Context, shortcode string) (string, error)
-	GetShortURLInfo(ctx context.Context, shortcode string) (dto.ShortURLInfo, error)
+	GetShortURLInfo(ctx context.Context, shortcode string) (domain.ShortURLInfo, error)
 	DeleteShortCode(ctx context.Context, shortcode string) error
-	UpdateShortURLInfo(ctx context.Context, shortcode string, url *string, expiryDuration *int, isActive bool) error
+	UpdateShortURLInfo(ctx context.Context, shortcode string, url *string, expiryDuration *int, isActive *bool) error
 }
 
 type shortURLService struct {
@@ -73,30 +73,35 @@ func (s *shortURLService) CreateShortURL(ctx context.Context, url string, ip str
 	}).Info("User data retrieved successfully")
 
 	// Ensure expirySec is non-nil before dereferencing to avoid nil pointer panic.
-	if userData.UserType == "free" || expirySec == nil {
+	if expirySec == nil {
 		defaultExpiry := 24 * 3600
-		if expirySec == nil {
-			expirySec = &defaultExpiry
-		} else {
-			*expirySec = defaultExpiry
-		}
+		expirySec = &defaultExpiry
+	}
+
+	if userData.UserType == "free" && *expirySec > 24*3600 {
+		*expirySec = 24 * 3600
 	}
 
 	if shortCode == "" {
 
-		var err error
 		retryCount := 0
 
-		for err == nil && retryCount < 5 {
-			shortCode = uuid.New().String()[:6]
-			// 4. Check if the custom short code is already in use. If it is, return an error message to the user.
+		for retryCount < 5 {
+			shortCode = utils.GenerateShortCode(6)
 
 			_, err := s.urlRepo.GetShortCode(ctx, shortCode)
-
-			if err == nil {
-				return "", 0, fmt.Errorf("Custom short url is already in use. Please submit request with different custom short code")
+			if errors.Is(err, sql.ErrNoRows) {
+				break // available
 			}
+			if err != nil {
+				return "", 0, err // real DB error
+			}
+
 			retryCount++
+		}
+
+		if retryCount == 5 {
+			return "", 0, fmt.Errorf("failed to generate unique shortcode")
 		}
 	} else {
 		_, err := s.urlRepo.GetShortCode(ctx, shortCode)
@@ -160,6 +165,8 @@ func (s *shortURLService) ResolveShortURL(ctx context.Context, shortcode string)
 	// Check if the short URL has expired based on the expiry duration and created at time
 	if time.Since(shortURLData.CreatedAt) > time.Duration(shortURLData.ExpiryDuration)*time.Second {
 		// Mark the short URL as inactive in the database
+
+		// TODO make the as a backgroud job to avoid latency in redirection, mark as inactive and then update in DB, for now doing in same request to avoid complexity of background job
 		shortURLData.UpdatedAt = time.Now()
 		shortURLData.IsActive = false
 		if err := s.urlRepo.UpdateShortCode(ctx, shortURLData); err != nil {
@@ -179,7 +186,7 @@ func (s *shortURLService) ResolveShortURL(ctx context.Context, shortcode string)
 
 }
 
-func (s *shortURLService) GetShortURLInfo(ctx context.Context, shortcode string) (dto.ShortURLInfo, error) {
+func (s *shortURLService) GetShortURLInfo(ctx context.Context, shortcode string) (domain.ShortURLInfo, error) {
 
 	logger.Log.WithFields(map[string]interface{}{
 		"shortcode": shortcode,
@@ -187,7 +194,7 @@ func (s *shortURLService) GetShortURLInfo(ctx context.Context, shortcode string)
 
 	shortURLData, err := s.urlRepo.GetShortCode(ctx, shortcode)
 
-	var shortURLInfo dto.ShortURLInfo
+	var shortURLInfo domain.ShortURLInfo
 
 	if err != nil {
 		logger.Log.WithFields(map[string]interface{}{
@@ -197,9 +204,9 @@ func (s *shortURLService) GetShortURLInfo(ctx context.Context, shortcode string)
 		return shortURLInfo, err
 	}
 
-	shortURL := fmt.Sprintf("https://%s:%s/%s", s.cfg.Domain, s.cfg.AppPort, shortURLData.ShortCode)
+	shortURL := fmt.Sprintf("https://%s/%s", s.cfg.Domain, shortURLData.ShortCode)
 
-	shortURLInfo = dto.ShortURLInfo{
+	shortURLInfo = domain.ShortURLInfo{
 		URL:            shortURLData.OriginalURL,
 		ShortCode:      shortURLData.ShortCode,
 		ShortURL:       shortURL,
@@ -207,12 +214,23 @@ func (s *shortURLService) GetShortURLInfo(ctx context.Context, shortcode string)
 		CreatedAt:      shortURLData.CreatedAt,
 		LastUpdatedAt:  shortURLData.UpdatedAt,
 		IsActive:       shortURLData.IsActive,
+		UserID:         shortURLData.UserID,
 	}
 
 	return shortURLInfo, nil
 }
 
 func (s *shortURLService) DeleteShortCode(ctx context.Context, shortcode string) error {
+
+	// Fetch existing short URL record
+	shortURLData, _ := s.urlRepo.GetShortCode(ctx, shortcode)
+
+	// Check resource ownership
+	userID := ctx.Value("user_id").(int)
+	if shortURLData.UserID != userID {
+		return errs.ErrUnauthorized
+	}
+
 	err := s.urlRepo.DeleteShortCode(ctx, shortcode)
 
 	if err != nil {
@@ -230,9 +248,17 @@ func (s *shortURLService) DeleteShortCode(ctx context.Context, shortcode string)
 	return nil
 }
 
-func (s *shortURLService) UpdateShortURLInfo(ctx context.Context, shortcode string, url *string, expiryDuration *int, isActive bool) error {
+func (s *shortURLService) UpdateShortURLInfo(ctx context.Context, shortcode string, url *string, expiryDuration *int, isActive *bool) error {
+
 	// Fetch existing short URL record
 	shortURLData, err := s.urlRepo.GetShortCode(ctx, shortcode)
+
+	// Check resource ownership
+	userID := ctx.Value("user_id").(int)
+	if shortURLData.UserID != userID {
+		return errs.ErrUnauthorized
+	}
+
 	if err != nil {
 		logger.Log.WithFields(map[string]interface{}{
 			"shortcode": shortcode,
@@ -251,7 +277,9 @@ func (s *shortURLService) UpdateShortURLInfo(ctx context.Context, shortcode stri
 	if expiryDuration != nil {
 		shortURLData.ExpiryDuration = *expiryDuration
 	}
-	shortURLData.IsActive = isActive
+	if isActive != nil {
+		shortURLData.IsActive = *isActive
+	}
 	shortURLData.UpdatedAt = time.Now()
 
 	if err := s.urlRepo.UpdateShortCode(ctx, shortURLData); err != nil {

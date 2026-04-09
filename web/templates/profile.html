@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Profile</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../static/css/profile.css">
+</head>
+<body>
+
+  <div class="container">
+    <div class="card">
+
+      <!-- Tabs -->
+      <div class="tabs">
+        <button class="tab-btn active" onclick="showTab('info')">Personal Info</button>
+        <button class="tab-btn" onclick="showTab('urls')">My URLs</button>
+      </div>
+
+      <!-- Personal Info -->
+      <div id="info" class="tab-content active">
+        <div class="info-item">
+          <label>Name</label>
+          <p>John Doe</p>
+        </div>
+        <div class="info-item">
+          <label>Email</label>
+          <p>john@example.com</p>
+        </div>
+        <div class="info-item">
+          <label>Joined</label>
+          <p>Jan 2026</p>
+        </div>
+      </div>
+
+      <!-- URLs -->
+      <div id="urls" class="tab-content">
+        <div class="url-item">
+          <a href="#">http://localhost:8080/abc123</a>
+          <div class="url-meta">Created: Today | Expiry: 24 hrs</div>
+        </div>
+        <div class="url-item">
+          <a href="#">http://localhost:8080/xyz789</a>
+          <div class="url-meta">Created: Yesterday | Expiry: 7 days</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+<script src="../static/js/profile.js"></script>
+</body>
+</html>

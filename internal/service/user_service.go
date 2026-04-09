@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/Sidi1901/urlShortner/internal/config"
-	"github.com/Sidi1901/urlShortner/internal/dto"
+	"github.com/Sidi1901/urlShortner/internal/domain"
 	errs "github.com/Sidi1901/urlShortner/internal/errors"
 	"github.com/Sidi1901/urlShortner/internal/model"
 	"github.com/Sidi1901/urlShortner/internal/repository"
@@ -119,7 +119,7 @@ func (s *userService) Login(ctx context.Context, email, password string) (string
 
 func (s *userService) RefreshToken(ctx context.Context, refreshToken string) (string, error) {
 
-	claims := &dto.Claims{}
+	claims := &domain.Claims{}
 
 	claims, err := utils.ValidateJWT(refreshToken, s.cfg.JwtSecret)
 

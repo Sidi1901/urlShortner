@@ -4,7 +4,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/Sidi1901/urlShortner/internal/dto"
+	"github.com/Sidi1901/urlShortner/internal/domain"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -33,9 +33,9 @@ func GenerateRefreshToken(userID int, jwtSecret string) (string, error) {
 	return token.SignedString([]byte(jwtSecret))
 }
 
-func ValidateJWT(tokenStr, jwtSecret string) (*dto.Claims, error) {
+func ValidateJWT(tokenStr, jwtSecret string) (*domain.Claims, error) {
 
-	token, err := jwt.ParseWithClaims(tokenStr, &dto.Claims{}, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.ParseWithClaims(tokenStr, &domain.Claims{}, func(token *jwt.Token) (interface{}, error) {
 		return []byte(jwtSecret), nil
 	})
 
@@ -43,7 +43,7 @@ func ValidateJWT(tokenStr, jwtSecret string) (*dto.Claims, error) {
 		return nil, err
 	}
 
-	claims, ok := token.Claims.(*dto.Claims)
+	claims, ok := token.Claims.(*domain.Claims)
 	if !ok || !token.Valid {
 		return nil, errors.New("invalid token")
 	}

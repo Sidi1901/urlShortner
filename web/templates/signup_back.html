@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Signup</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../static/css/login.css"> 
+ 
+</head>
+<body>
+
+  <div class="card">
+    <h1>Create Account</h1>
+
+    <form id="signup-form">
+
+    <div class="input-group">
+      <label>Name</label>
+      <input type="text" id="name" placeholder="Enter your name" name="name">
+    </div>
+
+    <div class="input-group">
+      <label>Email</label>
+      <input type="email" id="email" placeholder="Enter your email" name="email">
+    </div>
+
+    <div class="input-group">
+      <label>Password</label>
+      <input type="password" id="password" placeholder="Create password" name="password">
+      <div class="password-hint">Min 8 characters, include number & symbol</div>
+    </div>
+
+    <div class="input-group">
+      <label>Confirm Password</label>
+      <input type="password" id="confirmPassword" placeholder="Re-enter password" name="confirm-password">
+    </div>
+
+    <button class="btn" onclick="signup(event)" type="button">Sign Up</button>
+
+    </form>
+
+    <div class="footer-text">
+      Already have an account? <a href="/login">Login</a>
+    </div>
+  </div>
+
+  <div class="modal" id="modal">
+    <div class="modal-content">
+      <h2>Welcome 🎉</h2>
+      <p>Account created successfully!</p>
+      <button class="close-btn" onclick="closeModal()">Continue</button>
+    </div>
+  </div>
+
+
+  <script src="../static/js/signup.js"></script>
+
+</body>
+</html>

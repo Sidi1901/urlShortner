@@ -26,10 +26,10 @@ func (h *urlHandler) RegisterPublicRoutes(r *gin.Engine) {
 func (h *urlHandler) RegisterProtectedRoutes(rg *gin.RouterGroup) {
 	urls := rg.Group("/urls")
 	{
-		urls.POST("/", h.CreateShortURL)
+		urls.POST("", h.CreateShortURL)
 		urls.GET("/:shortcode", h.GetShortURL)
 		urls.DELETE("/:shortcode", h.DeleteShortURL)
-		urls.PUT("/", h.UpdateShortURLInfo)
+		urls.PUT("/:shortcode", h.UpdateShortURLInfo)
 	}
 }
 
@@ -127,7 +127,7 @@ func (h *urlHandler) GetShortURL(c *gin.Context) {
 		LastUpdatedAt:  shortURLData.LastUpdatedAt,
 	}
 
-	c.JSON(http.StatusFound, response)
+	c.JSON(http.StatusOK, response)
 }
 
 // PUT /api/v1/urls/:shortcode
@@ -141,7 +141,8 @@ func (h *urlHandler) UpdateShortURLInfo(c *gin.Context) {
 		logger.Log.WithFields(map[string]interface{}{
 			"error": err.Error(),
 		}).Error("Failed to bind JSON request for updating short URL info")
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
 	}
 
 	err := h.service.UpdateShortURLInfo(ctx, request.Shortcode, request.URL, request.ExpiryDuration, request.IsActive)

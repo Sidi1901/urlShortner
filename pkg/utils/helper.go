@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"crypto/rand"
+	"math/big"
 	"os"
 	"regexp"
 	"strings"
@@ -55,4 +57,23 @@ func IsValidDomain(url string) bool {
 	}
 
 	return true
+}
+
+const base62Chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
+// GenerateShortCode creates a random base62 string of given length
+func GenerateShortCode(length int) string {
+	result := make([]byte, length)
+
+	for i := 0; i < length; i++ {
+		num, err := rand.Int(rand.Reader, big.NewInt(int64(len(base62Chars))))
+		if err != nil {
+			// fallback (should rarely happen)
+			result[i] = base62Chars[0]
+			continue
+		}
+		result[i] = base62Chars[num.Int64()]
+	}
+
+	return string(result)
 }
