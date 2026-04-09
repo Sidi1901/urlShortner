@@ -1,13 +1,12 @@
 package main
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/Sidi1901/urlShortner/internal/config"
 	"github.com/Sidi1901/urlShortner/internal/database"
 	"github.com/Sidi1901/urlShortner/internal/handler"
-	"github.com/Sidi1901/urlShortner/internal/logger"
+	"github.com/Sidi1901/urlShortner/internal/infra"
 	"github.com/Sidi1901/urlShortner/internal/middleware"
 	"github.com/Sidi1901/urlShortner/internal/repository"
 	"github.com/Sidi1901/urlShortner/internal/routes"
@@ -21,30 +20,55 @@ func main() {
 
 	cfg := config.Config{}
 
-	fmt.Println("Loading config from environment variables...")
-
 	godotenv.Load()
 
 	if err := env.Parse(&cfg); err != nil {
 		log.Fatalf("Unable to load config: %v", err)
 	}
 
-	db := database.ConnectDB(&cfg)
-	if db == nil {
-		log.Fatal("Failed to connect to database")
+	PostgresDB := database.ConnectDB(&cfg)
+	if PostgresDB == nil {
+		log.Fatal("Failed to connect to Postges Database")
 	}
 
-	repo := repository.NewRepository(db, &cfg)
-	service := service.NewService(repo, &cfg)
-	handler := handler.NewHandler(service, &cfg)
+	RedisClient := database.NewRedisClient(&cfg)
 
-	logger.Init()
+	if RedisClient == nil {
+		log.Fatal("Failed to connect to Redis Databse")
+	}
+
+	RateLimiter := infra.NewRateLimiter(RedisClient.Client, infra.TokenBucketLua)
+
+	rateLimitMiddleware := middleware.NewRateLimitMiddlware(RateLimiter)
+	loggerMiddleware := middleware.NewLoggerMiddleware("info")
+	authMiddleware := middleware.NewAuthMiddleware(&cfg)
+
+	shortURLRepo := repository.NewShortURLRepository(PostgresDB.DB)
+	userRepo := repository.NewUserRepository(PostgresDB.DB)
+
+	shortURLService := service.NewShortURLService(shortURLRepo, userRepo, &cfg)
+	userService := service.NewUserService(userRepo, &cfg)
+
+	shortURLHandler := handler.NewURLHandler(shortURLService)
+	userHandler := handler.NewUserHandler(userService)
+	healthHandler := handler.NewHealthHandler()
 
 	r := gin.New()
-	r.Use(middleware.LoggerMiddleware())
-	routes.SetupRoutes(r, handler)
+	r.Use(loggerMiddleware.Logger())
 
-	fmt.Println("Server is running on http://localhost:" + cfg.AppPort)
+	// Serve static files
+	r.Static("/static", "./web/static")
+
+	// Load HTML templates
+	r.LoadHTMLGlob("web/templates/*")
+
+	routeReg := []routes.RouteRegistrar{
+		userHandler,
+		shortURLHandler,
+		healthHandler,
+	}
+
+	routes.SetupRoutes(r, rateLimitMiddleware, authMiddleware, routeReg)
 
 	r.Run(":" + cfg.AppPort)
 

@@ -7,7 +7,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func LoggerMiddleware() gin.HandlerFunc {
+type LoggerMiddleware struct {
+	level string
+}
+
+func NewLoggerMiddleware(level string) *LoggerMiddleware {
+	return &LoggerMiddleware{level: level}
+}
+
+func (m *LoggerMiddleware) Logger() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		start := time.Now()
 
@@ -28,6 +36,7 @@ func LoggerMiddleware() gin.HandlerFunc {
 			"status":    statusCode,
 			"latency":   latency.String(),
 			"client_ip": client_ip,
+			"level":     m.level,
 		}).Info("Incomming request")
 
 	}

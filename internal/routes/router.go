@@ -1,29 +1,28 @@
 package routes
 
 import (
-	"github.com/Sidi1901/urlShortner/internal/handler"
+	"github.com/Sidi1901/urlShortner/internal/middleware"
 	"github.com/gin-gonic/gin"
 )
 
-func SetupRoutes(r *gin.Engine, h *handler.Handler) {
+type RouteRegistrar interface {
+	RegisterPublicRoutes(r *gin.Engine)
+	RegisterProtectedRoutes(rg *gin.RouterGroup)
+}
 
-	// Public redirect
-	r.GET("/:shortcode", h.ResolveURL)
+func SetupRoutes(r *gin.Engine, rateMW *middleware.RateLimitMiddleware, authMW *middleware.AuthMiddleware, handlers []RouteRegistrar) {
 
-	// API Group
-	api := r.Group("/api/v1")
-	{
-		urls := api.Group("/urls")
-		{
-			urls.POST("", h.CreateShortURL)
-			urls.GET("/:shortcode", h.GetShortURL)
-			urls.DELETE("/:shortcode", h.DeleteShortURL)
-			urls.PUT("", h.UpdateShortURLInfo)
-			// urls.GET("/:shortCode/stats", h.GetStats)
-		}
-
+	// 1. Public routes
+	for _, h := range handlers {
+		h.RegisterPublicRoutes(r)
 	}
 
-	// Health Check
-	r.GET("/health", h.HealthCheck)
+	// 2. Protected routes
+	api := r.Group("/api/v1")
+	api.Use(authMW.Authenticate())
+	api.Use(rateMW.RateLimit())
+
+	for _, h := range handlers {
+		h.RegisterProtectedRoutes(api)
+	}
 }

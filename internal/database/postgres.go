@@ -12,9 +12,11 @@ import (
 	_ "github.com/lib/pq"
 )
 
-var DB *sqlx.DB
+type PostgresDB struct {
+	DB *sqlx.DB
+}
 
-func ConnectDB(cfg *config.Config) *sqlx.DB {
+func ConnectDB(cfg *config.Config) *PostgresDB {
 
 	logger.Log.Info("Connecting to PostgreSQL database...")
 
@@ -37,7 +39,7 @@ func ConnectDB(cfg *config.Config) *sqlx.DB {
 		logger.Log.WithFields(map[string]interface{}{
 			"error": err.Error(),
 		}).Error("Database Connection error")
-		return db
+		return nil
 	}
 
 	if err = db.Ping(); err != nil {
@@ -54,5 +56,5 @@ func ConnectDB(cfg *config.Config) *sqlx.DB {
 
 	logger.Log.Info("Connected to PostgreSQL")
 
-	return db
+	return &PostgresDB{DB: db}
 }
